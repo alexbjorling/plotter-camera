@@ -3,13 +3,33 @@ import numpy as np
 import utils
 import cv2
 
-# TODO: util which calculates the total travel path of a a sketch for comparison
 
 class Sketch(object):
+    """
+    Image handling class which loads and holds an image and creates 
+    drawing trajectories in various ways.
+    """
 
-    def __init__(self, imfile):
-        self.image = plt.imread(imfile)
-        self.bwimage = np.mean(self.image, axis=-1)
+    def __init__(self, image=None):
+        if image is not None:
+            self.read_image(image)
+
+    def read_image(self, image, max_size=320):
+        if image == str(image):
+            self.image = plt.imread(image)
+        elif hasattr(image, '__call__'):
+            self.image = image()
+
+        # make sure image is grayscale
+        while len(self.image.shape) > 2:
+            self.image = np.mean(self.image, axis=-1)
+
+        # make sure image is 8 bit
+        self.image = self.image.astype(np.uint8)
+
+        # resize image
+        scale = float(max_size) / np.max(self.image.shape)
+        self.image = cv2.resize(self.image, (0, 0), fx=scale, fy=scale)
 
     def amplitudeModScan(self, nLines, pixelsPerPeriod, gain=1, waveform='square'):
         """ 
@@ -24,7 +44,7 @@ class Sketch(object):
             raise ValueError('pixelsPerPerdiod must be even')
 
         linewidth = self.image.shape[0] / nLines
-        binnedImage = utils.binPixels(self.bwimage, m=linewidth, n=pixelsPerHalfPeriod)
+        binnedImage = utils.binPixels(self.image, m=linewidth, n=pixelsPerHalfPeriod)
         lines = []
         for line in range(nLines):
             # j is the horizontal pixel index, one for each horizontal step
@@ -67,7 +87,7 @@ class Sketch(object):
         """
         assert waveform in ['square', 'sawtooth']
         linewidth = self.image.shape[0] / nLines
-        binnedImage = utils.binPixels(self.bwimage, m=linewidth, n=1)
+        binnedImage = utils.binPixels(self.image, m=linewidth, n=1)
 
         lines = []
         for line in range(nLines):
@@ -108,14 +128,10 @@ class Sketch(object):
         minBlobSize: edges with an area below this value are filtered out
         """
 
-        # downsampling the image gives better edges
-        scale = 320.0/np.max(self.image.shape)
-        img = cv2.resize(self.image, (0, 0), fx=scale, fy=scale)
-
         # Canny filter
         lower = cutoff
         upper = 3 * lower
-        edges = cv2.Canny(img, lower, upper, apertureSize=3) / 255
+        edges = cv2.Canny(self.image, lower, upper, apertureSize=3) / 255
 
         # remove the smallest edges
         blobbed = utils.filterOutBlobs(edges, minBlobSize)
@@ -134,41 +150,47 @@ class Sketch(object):
         traces = []
         for i in order:
             c = contours[i]
-            c[:,0,1] = img.shape[0] - c[:,0,1]
-            traces.append(c[:,0,:] / scale)
+            c[:,0,1] = self.image.shape[0] - c[:,0,1]
+            traces.append(c[:,0,:])
         return traces
 
 # example usage
 if __name__ == '__main__':
     plt.ion()
-    s = Sketch('image.jpg')
+    #s = Sketch('image.jpg')
+    from scipy.misc import ascent
+    s = Sketch(ascent)
     
     # Simple line scans with different types of modulation
     plt.figure(figsize=(14,14))
     plt.subplot(321)
     utils.plotSketch(
-        s.amplitudeModScan(nLines=50, pixelsPerPeriod=30, gain=1.3, waveform='square')
+        s.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='square')
         )
     
     plt.subplot(322)
     utils.plotSketch(
-        s.amplitudeModScan(nLines=50, pixelsPerPeriod=30, gain=1.3, waveform='sawtooth')
+        s.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='sawtooth')
         )
     
     plt.subplot(323)
     utils.plotSketch(
-        s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=15, waveform='square')
+        s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=2.1, waveform='square')
         )
     
     plt.subplot(324)
     utils.plotSketch(
-        s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=15, waveform='sawtooth')
+        s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
         )
 
     plt.subplot(325)
     utils.plotSketch(
         s.contourDrawing()
         )
+
+
+    plt.subplot(326)
+    plt.imshow(s.image, cmap='gray')
 
     # Pencil sketch as a movie
     plt.figure()
