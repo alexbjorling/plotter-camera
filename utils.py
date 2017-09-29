@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.ndimage
-import matplotlib.pyplot as plt
 
 def binPixels(image, m=1, n=1):
     """ 
@@ -36,34 +35,3 @@ def filterOutBlobs(image, cutoffArea):
             outputImage[np.where(labeledImage == i)] += 1
     outputImage[np.where(outputImage > .5)] = 1
     return outputImage
-
-def plotSketch(scan, movie=False, shape=None, **kwargs):
-    """
-    Plot a sketch consisting of a list of (x, y) arrays.
-
-    move: plot point by point
-    shape: shape of final image, (y x)
-    kwargs: passed to plt.plot
-    """
-    # default plot settings
-    if (not 'color' in kwargs.keys()) and (not 'c' in kwargs.keys()):
-        kwargs['color'] = 'k'
-    if (not 'linestyle' in kwargs.keys()) and (not 'ls' in kwargs.keys()):
-        kwargs['linestyle'] = '-'
-
-    ax = plt.gca()
-    if shape:
-        ax.set_ylim([0, shape[0]])
-        ax.set_xlim([0, shape[1]])
-    for line in range(len(scan)):
-        if movie:
-            # trace out each curve point by point
-            for t in scan:
-                for ii in range(2, t.shape[0]):
-                    plt.plot(t[ii-2:ii,0], t[ii-2:ii,1], **kwargs)
-                    plt.pause(.001)
-        else:
-            # just plot each curve in its entirety
-            plt.plot(scan[line][:,0], scan[line][:,1], **kwargs)
-    ax.set_aspect('equal')
-    plt.autoscale(tight=True)

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import utils
 import cv2
+from Trajectory import Trajectory
 
 
 class Sketch(object):
@@ -33,8 +34,8 @@ class Sketch(object):
 
     def amplitudeModScan(self, nLines, pixelsPerPeriod, gain=1, waveform='square'):
         """ 
-        Returns line scan trajectory for the current image, as list of 
-        (x, y) arrays, with darkness modulated as amtlitude.
+        Returns line scan Trajectory for the current image with darkness
+        modulated as amtlitude.
         """
         assert waveform in ['square', 'sawtooth']
         try:
@@ -45,7 +46,7 @@ class Sketch(object):
 
         linewidth = self.image.shape[0] / nLines
         binnedImage = utils.binPixels(self.image, m=linewidth, n=pixelsPerHalfPeriod)
-        lines = []
+        lines = Trajectory()
         for line in range(nLines):
             # j is the horizontal pixel index, one for each horizontal step
             j = np.arange(binnedImage.shape[1]) * pixelsPerHalfPeriod
@@ -65,7 +66,7 @@ class Sketch(object):
         if waveform == 'square':
             # for each line, convert the sawtooth to a square by adding points
             # there's an extra zero somewhere but it works.
-            for i in range(len(lines)):
+            for i in range(lines.number):
                 x = lines[i][:,0]
                 y = lines[i][:,1]
                 xx = np.zeros(x.size * 2)
@@ -80,16 +81,16 @@ class Sketch(object):
 
     def frequencyModScan(self, nLines, pixelsPerTypicalPeriod, gain=1, waveform='square'):
         """ 
-        Returns line scan trajectory for the current image, as list of 
-        (x, y) arrays, with darkness modulated as frequency.
+        Returns line scan Trajectory for the current image with darkness
+        modulated as frequency.
 
-        pixelsPerTypicalPeriod is the frequency at image value 255 / 2.0
+        pixelsPerTypicalPeriod: the frequency at image value 255 / 2.0
         """
         assert waveform in ['square', 'sawtooth']
         linewidth = self.image.shape[0] / nLines
         binnedImage = utils.binPixels(self.image, m=linewidth, n=1)
 
-        lines = []
+        lines = Trajectory()
         for line in range(nLines):
             # the average darkness per pixel column of this particular line
             lineIntensity = (255.0 - binnedImage[line]) / 255.0
@@ -121,8 +122,7 @@ class Sketch(object):
 
     def contourDrawing(self, cutoff=80, minBlobSize=20):
         """
-        Makes a pencil drawing of the image, returned as a list of (x, y)
-        arrays, where each is a pencil stroke.
+        Makes a pencil drawing of the image, returned as a Trajectory.
 
         cutoff: the lower Canny filter cutoff
         minBlobSize: edges with an area below this value are filtered out
@@ -147,53 +147,47 @@ class Sketch(object):
         order = np.argsort(altitude)
 
         # package the curves in the standard way
-        traces = []
+        traces = Trajectory()
         for i in order:
             c = contours[i]
             c[:,0,1] = self.image.shape[0] - c[:,0,1]
             traces.append(c[:,0,:])
         return traces
 
+
 # example usage
 if __name__ == '__main__':
     plt.ion()
-    #s = Sketch('image.jpg')
-    from scipy.misc import ascent
-    s = Sketch(ascent)
+    s = Sketch('image.jpg')
+    #from scipy.misc import ascent
+    #s = Sketch(ascent)
     
     # Simple line scans with different types of modulation
     plt.figure(figsize=(14,14))
     plt.subplot(321)
-    utils.plotSketch(
-        s.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='square')
-        )
+    traj = s.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='square')
+    traj.plot()
     
     plt.subplot(322)
-    utils.plotSketch(
-        s.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='sawtooth')
-        )
+    traj = s.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='sawtooth')
+    traj.plot()
     
     plt.subplot(323)
-    utils.plotSketch(
-        s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=2.1, waveform='square')
-        )
+    traj = s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=2.1, waveform='square')
+    traj.plot()
     
     plt.subplot(324)
-    utils.plotSketch(
-        s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
-        )
+    traj = s.frequencyModScan(nLines=50, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
+    traj.plot()
 
     plt.subplot(325)
-    utils.plotSketch(
-        s.contourDrawing()
-        )
-
+    traj = s.contourDrawing()
+    traj.plot()
 
     plt.subplot(326)
     plt.imshow(s.image, cmap='gray')
 
     # Pencil sketch as a movie
     plt.figure()
-    utils.plotSketch(
-        s.contourDrawing(),
-        movie=True, shape=s.image.shape)
+    traj = s.contourDrawing()
+    traj.plot(movie=True, shape=s.image.shape)
