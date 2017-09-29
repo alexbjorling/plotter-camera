@@ -12,12 +12,20 @@ class Sketch(object):
     """
 
     def __init__(self, image=None):
+        """
+        Constructor.
+
+        image: Filename, function that returns an ndarray image, or just 
+               an ndarray.
+        """
         if image is not None:
             self.read_image(image)
 
     def read_image(self, image, max_size=320):
         if image == str(image):
             self.image = plt.imread(image)
+        elif type(image) == np.ndarray:
+            self.image = image
         elif hasattr(image, '__call__'):
             self.image = image()
 
