@@ -16,8 +16,10 @@ class Trajectory(object):
     code will have to handle scaling.
     """
 
-    def __init__(self):
+    def __init__(self, load=None):
         self.paths = []
+        if load:
+            self.load(load)
 
     def __getitem__(self, ind):
         return self.paths[ind]
@@ -96,6 +98,22 @@ class Trajectory(object):
         ax.set_aspect('equal')
         plt.autoscale(tight=True)
 
+    def dump(self, filename):
+        """
+        Write trajectory to file.
+        """
+        # pack list of arrays with defined keys to maintain ordering
+        packing = {'arr_%06d'%i:self.paths[i] for i in range(len(self.paths))}
+        np.savez(filename, **packing)
+
+    def load(self, filename):
+        """
+        Load and overwrite trajectory from file.
+        """
+        assert filename[-4:] == '.npz'
+        data = np.load(filename)
+        self.paths = [data[k] for k in sorted(data.keys())]
+        data.close()
 
 # example usage
 if __name__ == '__main__':
@@ -106,6 +124,11 @@ if __name__ == '__main__':
     traj = Trajectory()
     traj.append(p)
     traj.append(p + 5)
+
+    # save and load
+    traj.dump('/tmp/trajectory.npz')
+    del traj
+    traj = Trajectory(load='/tmp/trajectory.npz')
 
     # calculate contour length
     print traj.contour_length()             # 8.828
