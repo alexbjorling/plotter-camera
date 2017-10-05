@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import utils
 import cv2
@@ -23,7 +22,9 @@ class Sketch(object):
 
     def read_image(self, image, max_size=320):
         if image == str(image):
-            self.image = plt.imread(image)
+            self.image = cv2.cvtColor(
+                cv2.imread('image.jpg', cv2.IMREAD_UNCHANGED), 
+                cv2.COLOR_BGR2RGB)
         elif type(image) == np.ndarray:
             self.image = image
         elif hasattr(image, '__call__'):
@@ -165,6 +166,12 @@ class Sketch(object):
 
 # example usage
 if __name__ == '__main__':
+
+    try:
+        import matplotlib.pyplot as plt
+    except:
+        exit(-1)
+
     plt.ion()
     s = Sketch('image.jpg')
     #from scipy.misc import ascent
