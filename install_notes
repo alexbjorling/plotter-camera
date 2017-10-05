@@ -1,0 +1,21 @@
+* Put raspbian stretch lite on a 8gb card
+* On sd card, set wlan in /etc/wpa_supplicant/wpa_supplicant.conf:
+  network={
+      ssid="IFK"
+      psk="my password here"
+      key_mgmt=WPA-PSK
+  }
+* On sd card, activated ssh:
+  touch <boot partition>/ssh
+* Started installing opencv by these instructions for raspbian jessie:
+  https://www.pyimagesearch.com/2015/12/14/installing-opencv-on-your-raspberry-pi-zero/
+  skipped gtk stuff, opencv_contrib, also skipped virtualenv - but installed pip
+  used this cmake:
+  cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D CXX=g++ ..
+  ...that didn't work, math.h not found. think there's something off with gcc here, using g++:
+  cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D CMAKE_CXX_COMPILER=g++ -D CMAKE_C_COMPILER=gcc ..
+  ...that didn't work either. tried adding this flag from a bug report:
+  cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -DENABLE_PRECOMPILED_HEADERS=OFF ..
+  ...that didn't work either, bad variable names in cap_ffmpeg_impl.hpp
+  cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -DENABLE_PRECOMPILED_HEADERS=OFF -DWITH_FFMPEG=OFF ..
+  
