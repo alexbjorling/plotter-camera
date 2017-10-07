@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-
-
 class Plotter(object):
     """
     Class representing the hardware plotter.
@@ -11,8 +8,6 @@ class Plotter(object):
 
     def plot(self, traj):
         """
-        Method which actually plots a trajectory on paper. Dummy for now.
+        Method which actually plots a trajectory on paper.
         """
-        plt.figure()
-        traj.plot()
-        plt.show()
+        pass

@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
-
+import cv2
 
 class Camera(object):
     """
-    Class representing the hardware camera.
+    Class representing the hardware camera, wrapping the 
+    picamera.PiCamera class if useful.
     """
 
     def __init__(self):
@@ -13,4 +13,6 @@ class Camera(object):
         """
         Acquire an image from the camera and return ndarray. Dummy for now.
         """
-        return plt.imread('drawing/image.jpg')
+        return cv2.cvtColor(
+                cv2.imread('drawing/image.jpg', cv2.IMREAD_UNCHANGED), 
+                cv2.COLOR_BGR2RGB)
