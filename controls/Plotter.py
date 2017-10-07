@@ -8,6 +8,12 @@ class Plotter(object):
 
     def plot(self, traj):
         """
-        Method which actually plots a trajectory on paper.
+        Method which actually plots a trajectory on paper. Dummy for now.
         """
-        pass
+        try:
+            import matplotlib.pyplot as plt
+            plt.figure()
+            traj.plot()
+            plt.show()
+        except:
+            pass
