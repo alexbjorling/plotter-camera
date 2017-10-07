@@ -149,7 +149,13 @@ class Sketch(object):
 
         # translate edges to contour paths
         # TODO: play with the method parameter
-        contours, hierarchy = cv2.findContours(blobbed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
+        # different cv2 versions have different output here
+        result = cv2.findContours(blobbed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
+        if len(result) == 2:
+            contours, hierarchy = result
+        elif len(result) == 3:
+            null, contours, hierarchy = result
+            del null
 
         # order the contours from top to bottom
         altitude = [np.max(c[:,0,1]) for c in contours]
