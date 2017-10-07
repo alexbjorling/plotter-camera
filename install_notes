@@ -18,4 +18,10 @@
   cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -DENABLE_PRECOMPILED_HEADERS=OFF ..
   ...that didn't work either, bad variable names in cap_ffmpeg_impl.hpp
   cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -DENABLE_PRECOMPILED_HEADERS=OFF -DWITH_FFMPEG=OFF ..
+  ...worked!
+* sudo pip install scipy crashed somehow (no ssh connection next morning). trying:
+  sudo pip install scipy --no-cache-dir
+  ... crashed again. Increased cache size to 4gb (edit /etc/dphys-swapfile and restart /etc/init.d/dphys-swapfile). Tried again.
+  ... worked!
+
   
