@@ -21,7 +21,7 @@ class Sketch(object):
             self.read_image(image)
 
     def read_image(self, image, max_size=320):
-        if image == str(image):
+        if type(image) == str:
             self.image = cv2.cvtColor(
                 cv2.imread(image, cv2.IMREAD_UNCHANGED), 
                 cv2.COLOR_BGR2RGB)
