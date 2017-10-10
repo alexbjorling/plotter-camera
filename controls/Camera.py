@@ -1,18 +1,32 @@
-import cv2
+from picamera import PiCamera
+from picamera.array import PiRGBArray
 
-class Camera(object):
+class Camera(PiCamera):
     """
     Class representing the hardware camera, wrapping the 
-    picamera.PiCamera class if useful.
-    """
+    picamera.PiCamera class in order to encapsulate settings and return
+    an array.
 
-    def __init__(self):
-        pass
+    Currently setting the full field of view of the sensor doesn't work
+    and the behaviour is not as described in the API doc. Just leaving
+    the default sensor_mode and resolution, it'll do.
+    """
 
     def get_image(self):
         """
-        Acquire an image from the camera and return ndarray. Dummy for now.
+        Acquire an image from the camera and return BGR ndarray.
         """
-        return cv2.cvtColor(
-                cv2.imread('drawing/image.jpg', cv2.IMREAD_UNCHANGED), 
-                cv2.COLOR_BGR2RGB)
+        self.vflip = True
+        self.capture('test.jpg', resize=None)#, resize=SHAPE)
+        output = PiRGBArray(self)
+        self.capture(output, 'bgr')
+        return output.array
+
+# test
+if __name__ == '__main__':
+    import time
+    import cv2
+    cam = Camera()
+    time.sleep(2)
+    im = cam.get_image()
+    cv2.imwrite('test.jpg', im)
