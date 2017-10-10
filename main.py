@@ -26,7 +26,7 @@ def go_callback(par):
 
     # calculate how to draw it
     sketch = drawing.Sketch(image)
-    trajectory = sketch.contourDrawing()
+    trajectory = sketch.contourDrawing() # SEGFAULTS THE SECOND TIME - NOT SURE WHY
 
     # draw it
     plotter = controls.Plotter()
