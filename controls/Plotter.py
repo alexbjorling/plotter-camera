@@ -10,10 +10,4 @@ class Plotter(object):
         """
         Method which actually plots a trajectory on paper. Dummy for now.
         """
-        try:
-            import matplotlib.pyplot as plt
-            plt.figure()
-            traj.plot()
-            plt.show()
-        except:
-            pass
+        traj.dump('traj.npz')
