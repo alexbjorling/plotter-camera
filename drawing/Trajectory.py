@@ -8,12 +8,12 @@ except:
 
 class Trajectory(object):
     """
-    Trajectory management class which holds and provides useful
-    information on plotter paths. Trajectories are iterable and 
+    Trajectory management class which holds (and provides useful
+    information on) plotter paths. Trajectories are iterable and 
     indexable, where each element or path is a (x, y) N-by-2 ndarray.
 
-    For now everything is in pixel coordinates, probably the hardware 
-    code will have to handle scaling.
+    All trajectories are in arbitrary units, it is up to the application
+    to scale them. The properties xrange and yrange are useful here.
     """
 
     def __init__(self, load=None):
@@ -64,6 +64,18 @@ class Trajectory(object):
     @property
     def number(self):
         return len(self.paths)
+
+    @property
+    def xrange(self):
+        mn = min([min(c[:, 0]) for c in self.paths])
+        mx = max([max(c[:, 0]) for c in self.paths])
+        return (mn, mx)
+
+    @property
+    def yrange(self):
+        mn = min([min(c[:, 1]) for c in self.paths])
+        mx = max([max(c[:, 1]) for c in self.paths])
+        return (mn, mx)
 
     def plot(self, movie=False, shape=None, **kwargs):
         """
@@ -129,6 +141,10 @@ if __name__ == '__main__':
     traj.dump('/tmp/trajectory.npz')
     del traj
     traj = Trajectory(load='/tmp/trajectory.npz')
+
+    # get spanned x and y ranges
+    print traj.xrange
+    print traj.yrange
 
     # calculate contour length
     print traj.contour_length()             # 8.828
