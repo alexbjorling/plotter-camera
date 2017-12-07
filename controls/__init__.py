@@ -1,2 +1,2 @@
 from Camera import Camera
-from Plotter import Plotter
+import plotters
