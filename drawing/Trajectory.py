@@ -127,6 +127,20 @@ class Trajectory(object):
         self.paths = [data[k] for k in sorted(data.keys())]
         data.close()
 
+
+class Rose(Trajectory):
+    """
+    Test class which generates a Trajectory describing a single flower.
+    """
+    def __init__(self, k=4, angular_steps=360):
+        super(Rose, self).__init__()
+        angles = np.linspace(0, 2*np.pi, angular_steps, endpoint=False)
+        x = np.cos(k * angles) * np.cos(angles)
+        y = np.cos(k * angles) * np.sin(angles)
+        curve = np.vstack((x, y)).T
+        self.append(curve)
+
+
 # example usage
 if __name__ == '__main__':
     # add paths
