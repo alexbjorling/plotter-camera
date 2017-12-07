@@ -16,8 +16,8 @@ class MiniPlotter(object):
         # single motor for x/j axis
         self.m1 = L9110([6, 13, 19, 26], twophase=False)
         # two parallel motors for y/i axis
-        self.m2 = L9110([12, 16, 20, 21], twophase=True)
-        self.m3 = L9110([24, 25, 8, 7], twophase=True)
+        self.m2 = L9110([12, 16, 20, 21], twophase=False)
+        self.m3 = L9110([24, 25, 8, 7], twophase=False)
 
     def plot(self, traj):
         """
