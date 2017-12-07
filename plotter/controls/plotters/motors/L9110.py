@@ -7,7 +7,9 @@ class L9110(object):
     Driver class for the L9110 stepper motor controller.
     """
 
-    def __init__(self, pins, twophase=False):
+    MM_PER_STEP = .025
+
+    def __init__(self, pins, twophase=False, flipped=False):
         """
         Input:
 
@@ -41,21 +43,33 @@ class L9110(object):
 
         print '  ...done'
 
-    def move(self, steps, delay=.003):
+    @property
+    def position(self):
+        return self.abs_steps * self.MM_PER_STEP
+
+    @position.setter
+    def position(self, val):
+        self.abs_steps = val / self.MM_PER_STEP
+
+    def absmove(self, position, delay=.003):
         """
-        Start a move and return without blocking.
+        Non-blocking absolute move in millimeters.
         """
-        self.running = True        
+        distance = position - self.position
+        self.relmove(distance, delay=delay)
+
+    def relmove(self, distance, delay=.003):
+        """
+        Non-blocking relative move in millimeters.
+        """
+        self.running = True
+        steps = int(round(distance / self.MM_PER_STEP))
         t = threading.Thread(target=self._move, kwargs={'steps': steps, 'delay': delay})
         t.start()
 
-    def off(self):
-        for j in range(len(self.pins)):
-            GPIO.output(self.pins[j], GPIO.LOW)
-
     def _move(self, steps, delay=.002):
         """
-        Move a motor and return when the move is done.
+        Blocking relative move in steps.
         """
         reverse = False
         if steps < 0:
@@ -67,6 +81,14 @@ class L9110(object):
                 i_ = len(self.SEQ) - 1 - i_
             for j in range(len(self.pins)):
                 GPIO.output(self.pins[j], self.SEQ[i_][j])
+            if reverse:
+                self.abs_steps -= 1
+            else:
+                self.abs_steps += 1
             time.sleep(delay)
         self.off()
         self.running = False
+
+    def off(self):
+        for j in range(len(self.pins)):
+            GPIO.output(self.pins[j], GPIO.LOW)
