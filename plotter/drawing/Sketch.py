@@ -41,7 +41,8 @@ class Sketch(object):
         scale = float(max_size) / np.max(self.image.shape)
         self.image = cv2.resize(self.image, (0, 0), fx=scale, fy=scale)
 
-    def amplitudeModScan(self, nLines, pixelsPerPeriod, gain=1, waveform='square'):
+    def amplitudeModScan(self, nLines, pixelsPerPeriod, gain=1,
+                         waveform='square', snakeScan=True):
         """ 
         Returns line scan Trajectory for the current image with darkness
         modulated as amtlitude.
@@ -86,9 +87,13 @@ class Sketch(object):
                 yy[1:-1:2] = y[1:]
                 lines[i] = np.vstack((xx, yy)).T
 
+        if snakeScan:
+            self._makeSnakeScan(lines)
+
         return lines
 
-    def frequencyModScan(self, nLines, pixelsPerTypicalPeriod, gain=1, waveform='square'):
+    def frequencyModScan(self, nLines, pixelsPerTypicalPeriod, gain=1,
+                         waveform='square', snakeScan=True):
         """ 
         Returns line scan Trajectory for the current image with darkness
         modulated as frequency.
@@ -127,6 +132,10 @@ class Sketch(object):
             # convert to cartesian coordinates
             xy = np.vstack((j, nLines * linewidth - i)).T
             lines.append(xy)
+
+        if snakeScan:
+            self._makeSnakeScan(lines)
+
         return lines
 
     def contourDrawing(self, cutoff=80, minBlobSize=20):
@@ -169,6 +178,14 @@ class Sketch(object):
             traces.append(c[:,0,:])
         return traces
 
+    def _makeSnakeScan(self, traj):
+        """
+        Make a raster scan a snake scan in-place.
+        """
+        for i in range(len(traj)):
+            if i % 2:
+                # revert odd lines
+                traj[i] = np.flipud(traj[i])
 
 # example usage
 if __name__ == '__main__':
