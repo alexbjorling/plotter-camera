@@ -7,10 +7,6 @@ class MiniPlotter(object):
     """
     Class representing the small 2-axis plotter built from three L9110
     stepper controllers.
-
-    With the current construction, the ranges are like this:
-        m1:      7-82 mm
-        m2, m3: 11-81 mm
     """
 
     def __init__(self):
@@ -19,13 +15,13 @@ class MiniPlotter(object):
         GPIO.setmode(GPIO.BCM)
 
         # single motor for x axis
-        self.m1 = L9110([6, 13, 19, 26], twophase=False)
+        self.m1 = L9110([6, 13, 19, 26], twophase=True)
         # two parallel motors for y axis
         self.m2 = L9110([12, 16, 20, 21], twophase=True)
         self.m3 = L9110([24, 25, 8, 7], twophase=True)
 
         # motor limits compatible with the plotter construction
-        self.xrange = (8, 81)
+        self.xrange = (10, 81)
         self.yrange = (12, 80)
 
         # minimum delay between steps
