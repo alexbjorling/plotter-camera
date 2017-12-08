@@ -1,3 +1,4 @@
 to do:
 
-* plot pre-calculated waveforms (per Trajectory segment), test if synchronization is still ok
+* can we use threading timers instead of delays to improve the motor movement loop?
+* if so, could we pre-load waveforms onto the motors to improve performance?

@@ -39,6 +39,12 @@ class L9110(object):
         for pin in self.pins:
             GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
+        # global counter of steps taken, to keep consecutive movements smooth
+        self.rel_steps = 0
+
+        # absolute step position for keeping track of the position. set externally.
+        self.abs_steps = 0
+
         self.running = False
 
         print '  ...done'
@@ -76,17 +82,18 @@ class L9110(object):
             reverse = True
             steps = -steps
         for i in range(steps):
-            i_ = i % len(self.SEQ)
             if reverse:
-                i_ = len(self.SEQ) - 1 - i_
-            for j in range(len(self.pins)):
-                GPIO.output(self.pins[j], self.SEQ[i_][j])
-            if reverse:
+                self.rel_steps -= 1
                 self.abs_steps -= 1
             else:
+                self.rel_steps += 1
                 self.abs_steps += 1
+            i_ = self.rel_steps % len(self.SEQ)
+
+            for j in range(len(self.pins)):
+                GPIO.output(self.pins[j], self.SEQ[i_][j])
             time.sleep(delay)
-        self.off()
+
         self.running = False
 
     def off(self):
