@@ -45,6 +45,9 @@ class L9110(object):
         # absolute step position for keeping track of the position. set externally.
         self.abs_steps = 0
 
+        # an internal stop signal
+        self._stopped = False
+
         self.running = False
 
         print '  ...done'
@@ -82,6 +85,9 @@ class L9110(object):
             reverse = True
             steps = -steps
         for i in range(steps):
+            if self._stopped == True:
+                self._stopped = False
+                return
             if reverse:
                 self.rel_steps -= 1
                 self.abs_steps -= 1
@@ -95,6 +101,9 @@ class L9110(object):
             time.sleep(delay)
 
         self.running = False
+
+    def stop(self):
+        self._stopped = True
 
     def off(self):
         for j in range(len(self.pins)):

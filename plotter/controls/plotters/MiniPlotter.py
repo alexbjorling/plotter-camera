@@ -1,4 +1,5 @@
 from motors.L9110 import L9110
+from motors.LimitSwitch import LimitSwitch
 import RPi.GPIO as GPIO
 import time
 import numpy as np
@@ -20,9 +21,13 @@ class MiniPlotter(object):
         self.m2 = L9110([12, 16, 20, 21], twophase=True)
         self.m3 = L9110([24, 25, 8, 7], twophase=True)
 
+        # limit switches
+        self.lim2 = LimitSwitch(14)
+        self.lim3 = LimitSwitch(14)
+
         # motor limits compatible with the plotter construction
         self.xrange = (10, 81)
-        self.yrange = (12, 80)
+        self.yrange = (12, 75)
 
         # minimum delay between steps
         self.min_delay = .002
@@ -34,13 +39,25 @@ class MiniPlotter(object):
         Homing procedure. Sets the position attributes on all motors,
         and moves the pen to the origin.
         """
-        for m in (self.m1, self.m2, self.m3):
-            pos = float(input('Enter current motor position: '))
-            m.position = pos
-        # straighten out the y motors
-        self.m3.absmove(self.m2.position)
-        while self.running:
-            time.sleep(.1)
+
+        # limit switch on y for now
+        self.m2.relmove(1000)
+        self.m3.relmove(1000)
+        m2_done, m3_done = False, False
+        while (not m2_done) or (not m3_done):
+            if self.lim2.triggered:
+                m2_done = True
+                self.m2.stop()
+            if self.lim3.triggered:
+                m3_done = True
+                self.m3.stop()
+        self.m2.position = self.yrange[1]
+        self.m3.position = self.yrange[1]
+
+        # ...but not yet on x
+        pos = float(input('Enter current x motor position: '))
+        self.m1.position = pos
+
         # go home
         self.collective_move(self.xrange[0], self.yrange[0])
         while self.running:
