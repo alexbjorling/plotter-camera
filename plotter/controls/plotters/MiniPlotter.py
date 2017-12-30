@@ -16,21 +16,26 @@ class MiniPlotter(object):
         GPIO.setmode(GPIO.BCM)
 
         # single motor for x axis
-        self.m1 = L9110([6, 13, 19, 26], twophase=True)
+        self.m1 = L9110([6, 13, 19, 26], halfstep=True)
         # two parallel motors for y axis
-        self.m2 = L9110([12, 16, 20, 21], twophase=True)
-        self.m3 = L9110([24, 25, 8, 7], twophase=True)
+        self.m2 = L9110([12, 16, 20, 21], halfstep=True)
+        self.m3 = L9110([24, 25, 8, 7], halfstep=True)
 
         # limit switches
-        self.lim2 = LimitSwitch(14)
-        self.lim3 = LimitSwitch(14)
+        self.lim1 = LimitSwitch(14)
+        self.lim2 = LimitSwitch(15)
+        self.lim3 = LimitSwitch(18)
 
         # motor limits compatible with the plotter construction
-        self.xrange = (10, 81)
-        self.yrange = (12, 75)
+        # empty:
+        self.xrange = (2, 73)
+        self.yrange = (11, 80.5)
+        # with a pencil:
+        self.xrange = (10, 73)
+        self.yrange = (11, 80.5-4)
 
         # minimum delay between steps
-        self.min_delay = .002
+        self.min_delay = .0005
 
         self.home()
 
@@ -40,23 +45,23 @@ class MiniPlotter(object):
         and moves the pen to the origin.
         """
 
-        # limit switch on y for now
-        self.m2.relmove(1000)
-        self.m3.relmove(1000)
-        m2_done, m3_done = False, False
-        while (not m2_done) or (not m3_done):
+        self.m1.relmove(1000, delay=self.min_delay)
+        self.m2.relmove(1000, delay=self.min_delay)
+        self.m3.relmove(1000, delay=self.min_delay)
+        m1_done, m2_done, m3_done = False, False, False
+        while (not m1_done) or (not m2_done) or (not m3_done):
+            if self.lim1.triggered:
+                m1_done = True
+                self.m1.stop()
             if self.lim2.triggered:
                 m2_done = True
                 self.m2.stop()
             if self.lim3.triggered:
                 m3_done = True
                 self.m3.stop()
-        self.m2.position = self.yrange[1]
-        self.m3.position = self.yrange[1]
-
-        # ...but not yet on x
-        pos = float(input('Enter current x motor position: '))
-        self.m1.position = pos
+        self.m1.position = self.xrange[1]
+        self.m2.position = self.yrange[1] + 4
+        self.m3.position = self.yrange[1] + 4
 
         # go home
         self.collective_move(self.xrange[0], self.yrange[0])
@@ -150,6 +155,9 @@ class MiniPlotter(object):
         The GPIO has to be cleaned up.
         """
         print 'Destroying %s object, cleaning up GPIO' % self.__class__.__name__
+        self.m1.stop()
+        self.m2.stop()
+        self.m3.stop()
         GPIO.cleanup()
 
     def test(self):
