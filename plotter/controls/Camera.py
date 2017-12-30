@@ -12,12 +12,13 @@ class Camera(PiCamera):
     the default sensor_mode and resolution, it'll do.
     """
 
-    def get_image(self):
+    def get_image(self, dump=None):
         """
         Acquire an image from the camera and return BGR ndarray.
         """
         self.vflip = True
-        self.capture('test.jpg', resize=None)#, resize=SHAPE)
+        if dump is not None:
+            self.capture(dump, resize=None)#, resize=SHAPE)
         output = PiRGBArray(self)
         self.capture(output, 'bgr')
         return output.array

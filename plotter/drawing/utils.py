@@ -35,3 +35,14 @@ def filterOutBlobs(image, cutoffArea):
             outputImage[np.where(labeledImage == i)] += 1
     outputImage[np.where(outputImage > .5)] = 1
     return outputImage
+
+def square(image):
+    """
+    Takes an image and returns a cropped, square version.
+    """
+    a = image
+    dim = min(a.shape[:2])
+    image = image[(a.shape[0]-dim)/2 : (a.shape[0]-dim)/2+dim,
+                  (a.shape[1]-dim)/2 : (a.shape[1]-dim)/2+dim,]
+    print image.shape
+    return image

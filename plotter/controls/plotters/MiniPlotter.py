@@ -30,9 +30,9 @@ class MiniPlotter(object):
         # empty:
         self.xrange = (2, 73)
         self.yrange = (11, 80.5)
-        # with a pencil:
+        # with a pen:
         self.xrange = (10, 73)
-        self.yrange = (11, 80.5-4)
+        self.yrange = (11, 80.5)
 
         # minimum delay between steps
         self.min_delay = .0005
@@ -60,8 +60,8 @@ class MiniPlotter(object):
                 m3_done = True
                 self.m3.stop()
         self.m1.position = self.xrange[1]
-        self.m2.position = self.yrange[1] + 4
-        self.m3.position = self.yrange[1] + 4
+        self.m2.position = self.yrange[1]
+        self.m3.position = self.yrange[1]
 
         # go home
         self.collective_move(self.xrange[0], self.yrange[0])
