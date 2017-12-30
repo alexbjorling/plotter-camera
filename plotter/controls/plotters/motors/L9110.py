@@ -7,9 +7,7 @@ class L9110(object):
     Driver class for the L9110 stepper motor controller.
     """
 
-    MM_PER_STEP = .025
-
-    def __init__(self, pins, twophase=False, flipped=False):
+    def __init__(self, pins, twophase=False, halfstep=False, flipped=False):
         """
         Input:
 
@@ -17,6 +15,8 @@ class L9110(object):
                          inputs on the L9110s stepper driver.
         twophase (bool): Whether to run in two-phase mode.
         """
+
+        self.MM_PER_STEP = .025
 
         print 'initializing motor...'
         self.pins = pins
@@ -27,6 +27,18 @@ class L9110(object):
                 [0, 1, 0, 1],
                 [1, 0, 0, 1],
                 [1, 0, 1, 0],
+                ]
+        elif halfstep:
+            self.MM_PER_STEP *= .5
+            self.SEQ = [
+                [0, 1, 0, 1],
+                [0, 0, 0, 1],
+                [1, 0, 0, 1],
+                [1, 0, 0, 0],
+                [1, 0, 1, 0],
+                [0, 0, 1, 0],
+                [0, 1, 1, 0],
+                [0, 1, 0, 0],
                 ]
         else:
             self.SEQ = [
@@ -80,6 +92,7 @@ class L9110(object):
         """
         Blocking relative move in steps.
         """
+        self._stopped = False
         reverse = False
         if steps < 0:
             reverse = True
