@@ -18,7 +18,6 @@ class L9110(object):
 
         self.MM_PER_STEP = .025
 
-        print 'initializing motor...'
         self.pins = pins
 
         if twophase:
@@ -61,8 +60,6 @@ class L9110(object):
         self._stopped = False
 
         self.running = False
-
-        print '  ...done'
 
     @property
     def position(self):

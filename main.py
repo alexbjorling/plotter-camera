@@ -11,61 +11,69 @@ from plotter.drawing import utils
 
 # set up pin addresses
 BUTTON_PIN = 23
-GPIO.setmode(GPIO.BCM)
 
-def go_callback(par):
-    """
-    This is where the functionality is.
-    """
-    print "capturing..."
-    # disable more callbacks
-    GPIO.remove_event_detect(BUTTON_PIN)
+class App(object):
+    def __init__(self, debug=False):
+        self.do_debug = debug
 
-    # acquire an image
-    image = camera.get_image(dump=None)
-    image = utils.square(image)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-    # calculate how to draw it
-    sketch = Sketch(image)
-    print 'calculating...'
-    trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
-    trajectory.dump('dump.npz')
-    a = raw_input('plot? [Y/n]')
+        self.camera = Camera()
+        self.debug('initializing plotter...')
+        self.plotter = MiniPlotter()
+        self.debug('  ...done')
 
-    # draw it
-    if not 'n' in a.lower():
-        print 'drawing...'
-        plotter.plot(trajectory)
-        print '...done'
+    def debug(self, msg):
+        if self.do_debug:
+            print msg
 
-    # restore everything
-    activate_go_button()
+    def run(self):
+        # threaded callback is hopeless, this is robust
+        GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, bouncetime=200)
+        while True:
+            if GPIO.event_detected(BUTTON_PIN):
+                self.go()
+            time.sleep(.5)
+            self.debug('.')
 
-def activate_go_button():
-    """
-    Activate background edge detection on the button.
-    """
-    GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, callback=go_callback, bouncetime=200)
+    def go(self):
+        """
+        Take a picture and plot it.
+        """
+        try:
+            # acquire an image
+            self.debug('capturing...')
+            image = self.camera.get_image(dump=None)
+            image = utils.square(image)
+            self.debug('  ...done')
+
+            # calculate how to draw it
+            sketch = Sketch(image)
+            self.debug('calculating...')
+            trajectory = sketch.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='sawtooth')
+            #trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
+            #trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=4, waveform='square')
+            trajectory.dump('dump.npz')
+            self.debug('  ...done')
+            a = raw_input('plot? [Y/n]: ')
+
+            # draw it
+            if not 'n' in a.lower():
+                self.debug('drawing...')
+                self.plotter.plot(trajectory)
+                self.debug('...done')
+
+        except KeyboardInterrupt:
+            self.debug('...cancelled')
+            return
+
+    def __del__(self):
+        self.debug('cleaning up GPIO')
+        GPIO.cleanup()
+        self.debug('closing camera')
+        self.camera.close()
 
 if __name__ == '__main__':
-    # set up pins
-    GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    activate_go_button()
-
-    # make a camera instance
-    camera = Camera()
-
-    # make a plotter instance
-    plotter = MiniPlotter()
-
-    # main loop: doesn't have to run very fast
-    try:
-        while True:
-            time.sleep(1)
-    except:
-        GPIO.cleanup()
-        camera.close()
-        raise
-
-    GPIO.cleanup()
-    camera.close()
+    app = App(debug=True)
+    app.run()

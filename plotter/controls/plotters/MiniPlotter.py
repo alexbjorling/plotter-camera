@@ -12,9 +12,6 @@ class MiniPlotter(object):
 
     def __init__(self):
 
-        # set up pin addressing
-        GPIO.setmode(GPIO.BCM)
-
         # single motor for x axis
         self.m1 = L9110([6, 13, 19, 26], halfstep=True)
         # two parallel motors for y axis
@@ -45,20 +42,27 @@ class MiniPlotter(object):
         and moves the pen to the origin.
         """
 
-        self.m1.relmove(1000, delay=self.min_delay)
-        self.m2.relmove(1000, delay=self.min_delay)
-        self.m3.relmove(1000, delay=self.min_delay)
-        m1_done, m2_done, m3_done = False, False, False
-        while (not m1_done) or (not m2_done) or (not m3_done):
-            if self.lim1.triggered:
-                m1_done = True
-                self.m1.stop()
-            if self.lim2.triggered:
-                m2_done = True
-                self.m2.stop()
-            if self.lim3.triggered:
-                m3_done = True
-                self.m3.stop()
+        try:
+            self.m1.relmove(1000, delay=self.min_delay)
+            self.m2.relmove(1000, delay=self.min_delay)
+            self.m3.relmove(1000, delay=self.min_delay)
+            m1_done, m2_done, m3_done = False, False, False
+            while (not m1_done) or (not m2_done) or (not m3_done):
+                if self.lim1.triggered:
+                    m1_done = True
+                    self.m1.stop()
+                if self.lim2.triggered:
+                    m2_done = True
+                    self.m2.stop()
+                if self.lim3.triggered:
+                    m3_done = True
+                    self.m3.stop()
+        except KeyboardInterrupt:
+            self.m1.stop()
+            self.m2.stop()
+            self.m3.stop()
+            raise
+
         self.m1.position = self.xrange[1]
         self.m2.position = self.yrange[1]
         self.m3.position = self.yrange[1]
@@ -154,11 +158,10 @@ class MiniPlotter(object):
         """
         The GPIO has to be cleaned up.
         """
-        print 'Destroying %s object, cleaning up GPIO' % self.__class__.__name__
+        print 'Destroying %s object' % self.__class__.__name__
         self.m1.stop()
         self.m2.stop()
         self.m3.stop()
-        GPIO.cleanup()
 
     def test(self):
         from ...drawing import Rose

@@ -15,9 +15,6 @@ class LimitSwitch(object):
               fed) a low level
         """
 
-        if GPIO.getmode() is None:
-            GPIO.setmode(GPIO.BCM)
-
         if load == 1 and mode == 'NO':
             self.pull_up_down = GPIO.PUD_DOWN
             self.trigger_level = GPIO.HIGH

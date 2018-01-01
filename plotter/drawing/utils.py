@@ -44,5 +44,4 @@ def square(image):
     dim = min(a.shape[:2])
     image = image[(a.shape[0]-dim)/2 : (a.shape[0]-dim)/2+dim,
                   (a.shape[1]-dim)/2 : (a.shape[1]-dim)/2+dim,]
-    print image.shape
     return image
