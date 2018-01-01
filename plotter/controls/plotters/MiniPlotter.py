@@ -21,7 +21,7 @@ class MiniPlotter(object):
         # limit switches
         self.lim1 = LimitSwitch(14)
         self.lim2 = LimitSwitch(15)
-        self.lim3 = LimitSwitch(18)
+        self.lim3 = LimitSwitch(4)
 
         # motor limits compatible with the plotter construction
         # empty:

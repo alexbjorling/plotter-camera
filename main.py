@@ -5,11 +5,13 @@ Sketch of the main program.
 import RPi.GPIO as GPIO
 import time
 from plotter.controls.plotters import MiniPlotter
+from plotter.controls.plotters.motors import LED
 from plotter.controls import Camera
 from plotter.drawing import Sketch
 from plotter.drawing import utils
 
 # set up pin addresses
+LED_PIN = 18
 BUTTON_PIN = 23
 
 class App(object):
@@ -19,9 +21,12 @@ class App(object):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
+        self.led = LED(LED_PIN)
         self.camera = Camera()
         self.debug('initializing plotter...')
+        self.led.slow()
         self.plotter = MiniPlotter()
+        self.led.off()
         self.debug('  ...done')
 
     def debug(self, msg):
@@ -49,23 +54,28 @@ class App(object):
             self.debug('  ...done')
 
             # calculate how to draw it
+            self.led.fast()
             sketch = Sketch(image)
             self.debug('calculating...')
             trajectory = sketch.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='sawtooth')
             #trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
             #trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=4, waveform='square')
             trajectory.dump('dump.npz')
+            self.led.off()
             self.debug('  ...done')
             a = raw_input('plot? [Y/n]: ')
 
             # draw it
             if not 'n' in a.lower():
                 self.debug('drawing...')
+                self.led.slow()
                 self.plotter.plot(trajectory)
+                self.led.off()
                 self.debug('...done')
 
         except KeyboardInterrupt:
             self.debug('...cancelled')
+            self.led.off()
             return
 
     def __del__(self):
