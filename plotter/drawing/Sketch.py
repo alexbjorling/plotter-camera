@@ -1,6 +1,10 @@
 import numpy as np
 import utils
 import cv2
+import scipy as sp
+import scipy.ndimage
+from skimage.morphology import skeletonize
+
 from Trajectory import Trajectory
 
 
@@ -10,7 +14,7 @@ class Sketch(object):
     drawing trajectories in various ways.
     """
 
-    def __init__(self, image=None):
+    def __init__(self, image=None, max_size=300):
         """
         Constructor.
 
@@ -18,9 +22,9 @@ class Sketch(object):
                an ndarray.
         """
         if image is not None:
-            self.read_image(image)
+            self.read_image(image, max_size)
 
-    def read_image(self, image, max_size=320):
+    def read_image(self, image, max_size):
         if type(image) == str:
             self.image = cv2.cvtColor(
                 cv2.imread(image, cv2.IMREAD_UNCHANGED), 
@@ -138,28 +142,35 @@ class Sketch(object):
 
         return lines
 
-    def contourDrawing(self, cutoff=80, minBlobSize=20):
+    def contourDrawing(self, largerFilterSize=5, smallerFilterSize=3, threshold=-3, minBlobSize=100):
         """
         Makes a pencil drawing of the image, returned as a Trajectory.
+        We find ridges by a difference-of-Gaussians filter
 
-        cutoff: the lower Canny filter cutoff
+        smallerFilterSize: size of the small Gaussian filter
+        largerFilterSize: size of the large Gaussian filter
+        threshold: the cutoff for what constitutes a ridge
+
         minBlobSize: edges with an area below this value are filtered out
         """
 
         # Canny filter
-        lower = cutoff
-        upper = 3 * lower
-        edges = cv2.Canny(self.image, lower, upper, apertureSize=3) / 255
-
+        image = self.image.astype(np.float64)
+        image_smallFilter = sp.ndimage.filters.gaussian_filter(image, largerFilterSize)
+        image_largeFilter = sp.ndimage.filters.gaussian_filter(image, smallerFilterSize)
+        differenceImage = image_largeFilter - image_smallFilter
         # remove the smallest edges
-        blobbed = utils.filterOutBlobs(edges, minBlobSize)
-
-        # TODO: make sure there are no thick lines! this messes up the contours
+        thresholdedImage = differenceImage < threshold
+        thresholdedImage = thresholdedImage.astype(np.int64)
+        blobbed = utils.filterOutBlobs(thresholdedImage, 100)
+        skeletonized = skeletonize(blobbed)
+        skeletonized = skeletonized.astype('uint8')
 
         # translate edges to contour paths
         # TODO: play with the method parameter
         # different cv2 versions have different output here
-        result = cv2.findContours(blobbed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
+        result = cv2.findContours(skeletonized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
+
         if len(result) == 2:
             contours, hierarchy = result
         elif len(result) == 3:
@@ -196,7 +207,7 @@ if __name__ == '__main__':
         exit(-1)
 
     plt.ion()
-    s = Sketch('image.jpg')
+    s = Sketch('image.jpg', max_size=800)
     #from scipy.misc import ascent
     #s = Sketch(ascent)
     
@@ -219,7 +230,7 @@ if __name__ == '__main__':
     traj.plot()
 
     plt.subplot(325)
-    traj = s.contourDrawing()
+    traj = s.contourDrawing(largerFilterSize=3, smallerFilterSize=1)
     traj.plot()
 
     plt.subplot(326)
@@ -228,4 +239,4 @@ if __name__ == '__main__':
     # Pencil sketch as a movie
     plt.figure()
     traj = s.contourDrawing()
-    traj.plot(movie=True, shape=s.image.shape)
+    traj.plot(movie=False, shape=s.image.shape)
