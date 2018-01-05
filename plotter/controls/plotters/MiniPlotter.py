@@ -34,8 +34,6 @@ class MiniPlotter(object):
         # minimum delay between steps
         self.min_delay = .0005
 
-        self.home()
-
     def home(self):
         """
         Homing procedure. Sets the position attributes on all motors,

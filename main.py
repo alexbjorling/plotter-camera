@@ -26,6 +26,7 @@ class App(object):
         self.debug('initializing plotter...')
         self.led.slow()
         self.plotter = MiniPlotter()
+        self.plotter.home()
         self.led.off()
         self.debug('  ...done')
 
