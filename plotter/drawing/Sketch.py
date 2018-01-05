@@ -169,25 +169,8 @@ class Sketch(object):
         # translate edges to contour paths
         # TODO: play with the method parameter
         # different cv2 versions have different output here
-        result = cv2.findContours(skeletonized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
-
-        if len(result) == 2:
-            contours, hierarchy = result
-        elif len(result) == 3:
-            null, contours, hierarchy = result
-            del null
-
-        # order the contours from top to bottom
-        altitude = [np.max(c[:,0,1]) for c in contours]
-        order = np.argsort(altitude)
-
-        # package the curves in the standard way
-        traces = Trajectory()
-        for i in order:
-            c = contours[i]
-            c[:,0,1] = self.image.shape[0] - c[:,0,1]
-            traces.append(c[:,0,:])
-        return traces
+        traj = utils.pixelsToTrajectory(skeletonized)
+        return traj
 
     def _makeSnakeScan(self, traj):
         """

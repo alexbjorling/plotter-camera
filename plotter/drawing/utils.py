@@ -1,5 +1,7 @@
 import numpy as np
 import scipy.ndimage
+import cv2
+from Trajectory import Trajectory
 
 def binPixels(image, m=1, n=1):
     """ 
@@ -45,3 +47,24 @@ def square(image):
     image = image[(a.shape[0]-dim)/2 : (a.shape[0]-dim)/2+dim,
                   (a.shape[1]-dim)/2 : (a.shape[1]-dim)/2+dim,]
     return image
+
+def pixelsToTrajectory(image):
+        result = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
+
+        if len(result) == 2:
+            contours, hierarchy = result
+        elif len(result) == 3:
+            null, contours, hierarchy = result
+            del null
+
+        # order the contours from top to bottom
+        altitude = [np.max(c[:,0,1]) for c in contours]
+        order = np.argsort(altitude)
+
+        # package the curves in the standard way
+        traces = Trajectory()
+        for i in order:
+            c = contours[i]
+            c[:,0,1] = image.shape[0] - c[:,0,1]
+            traces.append(c[:,0,:])
+        return traces
