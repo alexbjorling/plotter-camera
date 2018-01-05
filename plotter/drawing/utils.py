@@ -53,22 +53,50 @@ def square(image):
 
 
 def pixels_to_trajectory(image):
-        result = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
 
-        if len(result) == 2:
-            contours, hierarchy = result
-        elif len(result) == 3:
-            null, contours, hierarchy = result
-            del null
+    def walk(image, start, max_steps):
+        """
+        Generator which walks along positive pixels and yields the indices passed.
+        Returns when the end of the line is reached or after max_steps.
+        """
+        i, j = start
+        mask = np.empty((3,3), dtype=np.uint8)
+        for step in range(max_steps):
+            yield i, j
+            mask[:] = 1
+            mask[1, 1] = 0
+            if step:
+                mask[last_pos] = 0
+            masked = mask * image[i-1:i+2, j-1:j+2]
+            if not masked.max():
+                return
+            direction = np.array(np.unravel_index(np.argmax(masked), (3,3))) - 1
+            last_pos = tuple(1 - direction)
+            i += direction[0]
+            j += direction[1]
 
-        # order the contours from top to bottom
-        altitude = [np.max(c[:, 0, 1]) for c in contours]
-        order = np.argsort(altitude)
+    # cheat the boundaries
+    image[0,:] = 0
+    image[-1, :] = 0
+    image[:, -1] = 0
+    image[:, 0] = 0
 
-        # package the curves in the standard way
-        traces = Trajectory()
-        for i in order:
-            c = contours[i]
-            c[:, 0, 1] = image.shape[0] - c[:, 0, 1]
-            traces.append(c[:, 0, :])
-        return traces
+    traj = Trajectory()
+    while image.max():
+        # pick an arbitrary positive pixel
+        i, j = np.unravel_index(np.argmax(image), image.shape)
+
+        # try finding the end of the line, max N pixels
+        for ind in walk(image, (i, j), 1000):
+            pass
+
+        # walk again
+        t = []
+        for ind in walk(image, ind, 1000):
+            t.append(ind)
+            image[ind] = 0
+
+        arr = np.fliplr(np.array(t))
+        arr[:, 1] = image.shape[0] - arr[:, 1]
+        traj.append(arr)
+    return traj
