@@ -50,7 +50,7 @@ class App(object):
         try:
             # acquire an image
             self.debug('capturing...')
-            image = self.camera.get_image(dump=None)
+            image = self.camera.get_image(dump='dump.jpg')
             image = utils.square(image)
             self.debug('  ...done')
 
@@ -58,9 +58,8 @@ class App(object):
             self.led.fast()
             sketch = Sketch(image)
             self.debug('calculating...')
-            trajectory = sketch.amplitudeModScan(nLines=50, pixelsPerPeriod=4, gain=1.3, waveform='sawtooth')
-            #trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
-            #trajectory = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=4, waveform='square')
+            #trajectory = sketch.amplitude_mod_scan(n_lines=50, pixels_per_period=4, gain=1.3, waveform='sawtooth')
+            trajectory = sketch.contour_drawing()
             trajectory.dump('dump.npz')
             self.led.off()
             self.debug('  ...done')

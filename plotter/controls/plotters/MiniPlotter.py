@@ -24,12 +24,8 @@ class MiniPlotter(object):
         self.lim3 = LimitSwitch(4)
 
         # motor limits compatible with the plotter construction
-        # empty:
-        self.xrange = (2, 73)
-        self.yrange = (11, 80.5)
-        # with a pen:
-        self.xrange = (10, 73)
-        self.yrange = (11, 80.5)
+        self.xrange = (8, 73)
+        self.yrange = (20, 80.5)
 
         # minimum delay between steps
         self.min_delay = .0005
@@ -103,8 +99,8 @@ class MiniPlotter(object):
         # ampl * traj.paths[i][j, :] + (offsetx, offsety)
         xrng = traj.xrange
         yrng = traj.yrange
-        xampl = (self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
-        yampl = (self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
+        xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
+        yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
         ampl = min((xampl, yampl))
         cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
         ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
