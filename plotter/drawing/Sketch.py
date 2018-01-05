@@ -1,11 +1,10 @@
 import numpy as np
 import utils
 import cv2
-import scipy as sp
-import scipy.ndimage
 from skimage.morphology import skeletonize
 
 from Trajectory import Trajectory
+import Filters
 
 
 class Sketch(object):
@@ -142,34 +141,40 @@ class Sketch(object):
 
         return lines
 
-    def contour_drawing(self, larger_filter_size=5, smaller_filter_size=3,
-                        threshold=-3, min_blob_size=100):
+    def contour_drawing(self,
+                        filter_list=[{"difference_of_gaussians": {
+                               "larger_filter_size": 3,
+                               "smaller_filter_size": 1,
+                               "threshold": 3
+                               }
+                                    }],
+                        min_blob_size=100):
         """
         Makes a pencil drawing of the image, returned as a Trajectory.
         We find ridges by a difference-of-Gaussians filter
 
-        smaller_filter_size: size of the small Gaussian filter
-        larger_filter_size: size of the large Gaussian filter
-        threshold: the cutoff for what constitutes a ridge
+        filter_list: A list of filter descriptors.
+            Each descriptor is a dict containing a single item.
+            The key of the item indicates the name of the filter function.
+            The value of the item is a dict of keywords passed to the filter function.
 
         min_blob_size: edges with an area below this value are filtered out
         """
-
-        # Canny filter
         image = self.image.astype(np.float64)
-        image_small_filter = sp.ndimage.filters.gaussian_filter(image, larger_filter_size)
-        image_large_filter = sp.ndimage.filters.gaussian_filter(image, smaller_filter_size)
-        difference_image = image_large_filter - image_small_filter
-        # remove the smallest edges
-        thresholded_image = difference_image < threshold
-        thresholded_image = thresholded_image.astype(np.int64)
-        blobbed = utils.filter_out_blobs(thresholded_image, min_blob_size)
+
+        mask = np.zeros(shape=image.shape, dtype=np.bool)
+        for filter_descriptor in filter_list:
+                for filter_name, filter_kwargs in filter_descriptor.iteritems():
+                    filter_func = Filters.filter_lookup(filter_name)
+                    filtered_image = filter_func(image, **filter_kwargs)
+                    mask = np.logical_or(mask, filtered_image)
+
+        mask = mask.astype(np.float64)
+        blobbed = utils.filter_out_blobs(mask, min_blob_size)
         skeletonized = skeletonize(blobbed)
         skeletonized = skeletonized.astype('uint8')
 
         # translate edges to contour paths
-        # TODO: play with the method parameter
-        # different cv2 versions have different output here
         traj = utils.pixels_to_trajectory(skeletonized)
         return traj
 
@@ -188,7 +193,7 @@ if __name__ == '__main__':
 
     try:
         import matplotlib.pyplot as plt
-    except:
+    except ImportError:
         exit(-1)
 
     plt.ion()
@@ -215,7 +220,7 @@ if __name__ == '__main__':
     traj.plot()
 
     plt.subplot(325)
-    traj = s.contour_drawing(larger_filter_size=3, smaller_filter_size=1)
+    traj = s.contour_drawing()
     traj.plot()
 
     plt.subplot(326)
@@ -223,5 +228,16 @@ if __name__ == '__main__':
 
     # Pencil sketch as a movie
     plt.figure()
-    traj = s.contour_drawing()
+    filter_list = [{"difference_of_gaussians": {
+                   "larger_filter_size": 5,
+                   "smaller_filter_size": 3,
+                   "threshold": 5
+                   }},
+                   {"difference_of_gaussians": {
+                    "larger_filter_size": 3,
+                    "smaller_filter_size": 1,
+                    "threshold": 5
+                    }}
+                   ]
+    traj = s.contour_drawing(filter_list)
     traj.plot(movie=False, shape=s.image.shape)

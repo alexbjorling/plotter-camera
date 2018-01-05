@@ -53,6 +53,8 @@ def square(image):
 
 
 def pixels_to_trajectory(image):
+        # TODO: play with the method parameter
+        # different cv2 versions have different output here
         result = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
 
         if len(result) == 2:
