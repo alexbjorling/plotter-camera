@@ -45,6 +45,8 @@ class Trajectory(object):
 
         path_index: Index of specific path to calculate, if None give
                     the sum over all paths.
+
+        Returns: Tuple (contour length, total travel distance)
         """
 
         def path_length(path):
@@ -54,12 +56,15 @@ class Trajectory(object):
             return total
 
         if path_index is not None:
-            return path_length(self.paths[path_index])
+            return (path_length(self.paths[path_index]),) * 2
 
-        total = 0.0
-        for path in self.paths:
+        contour, total = 0.0, 0.0
+        for i, path in enumerate(self.paths):
+            contour += path_length(path)
             total += path_length(path)
-        return total
+            if i:
+                total += path_length((self[i][0], self[i-1][-1])) 
+        return contour, total
 
     @property
     def number(self):
@@ -127,6 +132,12 @@ class Trajectory(object):
         data = np.load(filename)
         self.paths = [data[k] for k in sorted(data.keys())]
         data.close()
+
+    def optimize(self):
+        """
+        Optimize travel.
+        """
+        raise NotImplementedError
 
 
 class Rose(Trajectory):
