@@ -1,6 +1,6 @@
 import numpy as np
-import scipy.ndimage
 import cv2
+import skimage
 from Trajectory import Trajectory
 
 
@@ -30,15 +30,8 @@ def filter_out_blobs(image, cutoff_area):
     Takes an image and returns a version with only contiguous blobs
     with an area above cutoff_area left.
     """
-    labeled_image, N = scipy.ndimage.label(image, structure=np.ones((3, 3)))
-    # first, work out which is the biggest blob (except the background)
-    output_image = np.zeros(image.shape, dtype=image.dtype)
-    for i in range(1, N + 1):  # N doesn't include the background
-        area = sum(sum(labeled_image == i))
-        if area >= cutoff_area:
-            output_image[np.where(labeled_image == i)] += 1
-    output_image[np.where(output_image > .5)] = 1
-    return output_image
+    skimage.morphology.remove_small_objects(image, min_size=cutoff_area, connectivity=2, in_place=True)
+    return image
 
 
 def square(image):

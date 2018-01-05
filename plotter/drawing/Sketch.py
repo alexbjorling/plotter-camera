@@ -2,6 +2,7 @@ import numpy as np
 import utils
 import cv2
 from skimage.morphology import skeletonize
+import time
 
 from Trajectory import Trajectory
 import Filters
@@ -169,13 +170,14 @@ class Sketch(object):
                     filtered_image = filter_func(image, **filter_kwargs)
                     mask = np.logical_or(mask, filtered_image)
 
-        mask = mask.astype(np.float64)
         blobbed = utils.filter_out_blobs(mask, min_blob_size)
         skeletonized = skeletonize(blobbed)
         skeletonized = skeletonized.astype('uint8')
 
         # translate edges to contour paths
+        t0 = time.time(); print 'tracing...'
         traj = utils.pixels_to_trajectory(skeletonized)
+        print '...%f' % (time.time() - t0)
         return traj
 
     def _make_snake_scan(self, traj):
