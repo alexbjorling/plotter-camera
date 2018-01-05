@@ -9,7 +9,7 @@ except:
 class Trajectory(object):
     """
     Trajectory management class which holds (and provides useful
-    information on) plotter paths. Trajectories are iterable and 
+    information on) plotter paths. Trajectories are iterable and
     indexable, where each element or path is a (x, y) N-by-2 ndarray.
 
     All trajectories are in arbitrary units, it is up to the application
@@ -40,19 +40,19 @@ class Trajectory(object):
             self.paths.append(new)
 
     def contour_length(self, path_index=None):
-        """ 
+        """
         Calculate the total length of a trajectory, or of a single path.
 
         path_index: Index of specific path to calculate, if None give
                     the sum over all paths.
         """
-        
+
         def path_length(path):
             total = 0.0
             diff = np.diff(path, axis=0)
             total += np.sum(np.sqrt(np.sum(diff**2, axis=1)), axis=0)
             return total
-        
+
         if path_index is not None:
             return path_length(self.paths[path_index])
 
@@ -85,12 +85,13 @@ class Trajectory(object):
         shape: shape of final image, (y x)
         kwargs: passed to plt.plot
         """
-        if not HAS_PLT: return -1
+        if not HAS_PLT:
+            return -1
 
         # default plot settings
-        if (not 'color' in kwargs.keys()) and (not 'c' in kwargs.keys()):
+        if ('color' not in kwargs.keys()) and ('c' not in kwargs.keys()):
             kwargs['color'] = 'k'
-        if (not 'linestyle' in kwargs.keys()) and (not 'ls' in kwargs.keys()):
+        if ('linestyle' not in kwargs.keys()) and ('ls' not in kwargs.keys()):
             kwargs['linestyle'] = '-'
 
         ax = plt.gca()
@@ -102,11 +103,11 @@ class Trajectory(object):
                 # trace out each curve point by point
                 for t in self:
                     for ii in range(2, t.shape[0]):
-                        plt.plot(t[ii-2:ii,0], t[ii-2:ii,1], **kwargs)
+                        plt.plot(t[ii-2:ii, 0], t[ii-2:ii, 1], **kwargs)
                         plt.pause(.001)
             else:
                 # just plot each curve in its entirety
-                plt.plot(self[line][:,0], self[line][:,1], **kwargs)
+                plt.plot(self[line][:, 0], self[line][:, 1], **kwargs)
         ax.set_aspect('equal')
         plt.autoscale(tight=True)
 
@@ -115,7 +116,7 @@ class Trajectory(object):
         Write trajectory to file.
         """
         # pack list of arrays with defined keys to maintain ordering
-        packing = {'arr_%06d'%i:self.paths[i] for i in range(len(self.paths))}
+        packing = {'arr_%06d' % i: self.paths[i] for i in range(len(self.paths))}
         np.savez(filename, **packing)
 
     def load(self, filename):
@@ -161,8 +162,8 @@ if __name__ == '__main__':
     print traj.yrange
 
     # calculate contour length
-    print traj.contour_length()             # 8.828
-    print traj.contour_length(path_index=0) # 4.414 - just the first path
+    print traj.contour_length()              # 8.828
+    print traj.contour_length(path_index=0)  # 4.414 - just the first path
 
     # iterate over paths
     for p in traj:
