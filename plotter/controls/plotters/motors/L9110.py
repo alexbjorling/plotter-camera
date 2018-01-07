@@ -7,13 +7,15 @@ class L9110(object):
     Driver class for the L9110 stepper motor controller.
     """
 
-    def __init__(self, pins, twophase=False, halfstep=False, flipped=False):
+    def __init__(self, pins, twophase=False, halfstep=False, power_saving=True):
         """
         Input:
 
-        pins (list):     I/O pins connected to the [B-1A, B-1B, A-1A, A-1B]
-                         inputs on the L9110s stepper driver.
-        twophase (bool): Whether to run in two-phase mode.
+        pins (list):         I/O pins connected to the [B-1A, B-1B, A-1A, A-1B]
+                             inputs on the L9110s stepper driver.
+        twophase (bool):     Whether to run in two-phase mode full step mode.
+        halfstep (bool):     Whether to use eight steps per revolution.
+        power_saving (bool): Power down motor between movements.
         """
 
         self.MM_PER_STEP = .025
@@ -46,6 +48,8 @@ class L9110(object):
                 [0, 1, 0, 0],
                 [0, 0, 0, 1],
                 ]
+
+        self.power_saving = power_saving
 
         for pin in self.pins:
             GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
@@ -85,6 +89,14 @@ class L9110(object):
         t = threading.Thread(target=self._move, kwargs={'steps': steps, 'delay': delay})
         t.start()
 
+    def _current_seq(self):
+            i_ = self.rel_steps % len(self.SEQ)
+            return self.SEQ[i_]
+
+    def _output_seq(self, seq):
+            for j in range(len(self.pins)):
+                GPIO.output(self.pins[j], seq[j])
+
     def _move(self, steps, delay=.002):
         """
         Blocking relative move in steps.
@@ -94,6 +106,10 @@ class L9110(object):
         if steps < 0:
             reverse = True
             steps = -steps
+
+        if self.power_saving:
+            self._output_seq(self._current_seq())
+
         for i in range(steps):
             if self._stopped == True:
                 self._stopped = False
@@ -106,9 +122,11 @@ class L9110(object):
                 self.abs_steps += 1
             i_ = self.rel_steps % len(self.SEQ)
 
-            for j in range(len(self.pins)):
-                GPIO.output(self.pins[j], self.SEQ[i_][j])
+            self._output_seq(self._current_seq())
             time.sleep(delay)
+
+        if self.power_saving:
+            self._output_seq([(GPIO.LOW),] * len(self.SEQ))
 
         self.running = False
 
