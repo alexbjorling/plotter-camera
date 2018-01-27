@@ -1,4 +1,5 @@
 import numpy as np
+from TrajectoryOptimization import one_opt
 try:
     import matplotlib.pyplot as plt
     HAS_PLT = True
@@ -133,11 +134,11 @@ class Trajectory(object):
         self.paths = [data[k] for k in sorted(data.keys())]
         data.close()
 
-    def optimize(self):
+    def optimize(self, timeout=10):
         """
         Optimize travel.
         """
-        raise NotImplementedError
+        one_opt(self, timeout)
 
 
 class Rose(Trajectory):
