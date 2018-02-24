@@ -1,13 +1,13 @@
+from BaseStepper import BaseStepper
 import RPi.GPIO as GPIO
 import time
-import threading
 
-class L9110(object):
+class L9110(BaseStepper):
     """
     Driver class for the L9110 stepper motor controller.
     """
 
-    def __init__(self, pins, twophase=False, halfstep=False, power_saving=True):
+    def __init__(self, pins, per_step=.025, twophase=False, halfstep=False, power_saving=True):
         """
         Input:
 
@@ -18,7 +18,9 @@ class L9110(object):
         power_saving (bool): Power down motor between movements.
         """
 
-        self.MM_PER_STEP = .025
+        super(self.__class__, self).__init__()
+
+        self.per_step = per_step
 
         self.pins = pins
 
@@ -30,7 +32,7 @@ class L9110(object):
                 [1, 0, 1, 0],
                 ]
         elif halfstep:
-            self.MM_PER_STEP *= .5
+            self.per_step *= .5
             self.SEQ = [
                 [0, 1, 0, 1],
                 [0, 0, 0, 1],
@@ -63,31 +65,13 @@ class L9110(object):
         # an internal stop signal
         self._stopped = False
 
-        self.running = False
-
     @property
     def position(self):
-        return self.abs_steps * self.MM_PER_STEP
+        return self.abs_steps * self.per_step
 
     @position.setter
     def position(self, val):
-        self.abs_steps = val / self.MM_PER_STEP
-
-    def absmove(self, position, delay=.003):
-        """
-        Non-blocking absolute move in millimeters.
-        """
-        distance = position - self.position
-        self.relmove(distance, delay=delay)
-
-    def relmove(self, distance, delay=.003):
-        """
-        Non-blocking relative move in millimeters.
-        """
-        self.running = True
-        steps = int(round(distance / self.MM_PER_STEP))
-        t = threading.Thread(target=self._move, kwargs={'steps': steps, 'delay': delay})
-        t.start()
+        self.abs_steps = val / self.per_step
 
     def _current_seq(self):
             i_ = self.rel_steps % len(self.SEQ)
@@ -101,6 +85,7 @@ class L9110(object):
         """
         Blocking relative move in steps.
         """
+        self.running = True
         self._stopped = False
         reverse = False
         if steps < 0:

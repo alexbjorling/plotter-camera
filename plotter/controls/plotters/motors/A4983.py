@@ -1,9 +1,9 @@
+from BaseStepper import BaseStepper
 import RPi.GPIO as GPIO
 import time
-import threading
 import numpy as np
 
-class A4983(object):
+class A4983(BaseStepper):
     """
     Driver class for the Allegro A4983 stepper motor controller chip, as
     found for example in the Olimex BB-A4983 or Pololu drivers. It
@@ -35,6 +35,8 @@ class A4983(object):
                              Default: False
         """
 
+        super(self.__class__, self).__init__()
+
         # map from the number of microsteps to ms1, ms2, ms3 pin values.
         self.MS_MAP = {
             1: [0, 0, 0],
@@ -45,12 +47,12 @@ class A4983(object):
         }
 
         # Parse input
-        self.per_step = float(per_step)
         self.step_pin, self.dir_pin, self.sleep_pin = pins
         if mspins is not None:
             self.ms1_pin, self.ms2_pin, self.ms3_pin = mspins
         self.soft = soft_start
         self.ms = int(microstepping)
+        self.per_step = float(per_step) / self.ms
         assert self.ms in self.MS_MAP.keys()
         if not self.ms == 1:
             assert mspins is not None
@@ -70,15 +72,13 @@ class A4983(object):
         # an internal stop signal
         self._stopped = False
 
-        self.running = False
-
     @property
     def position(self):
-        return self.abs_steps * self.per_step / self.ms
+        return self.abs_steps * self.per_step
 
     @position.setter
     def position(self, val):
-        self.abs_steps = val / self.per_step * self.ms
+        self.abs_steps = val / self.per_step
 
     @property
     def sleeping(self):
@@ -92,22 +92,6 @@ class A4983(object):
         else:
             GPIO.setup(self.sleep_pin, GPIO.OUT, initial=GPIO.HIGH)
 
-    def absmove(self, position, delay=.003):
-        """
-        Non-blocking absolute move in millimeters.
-        """
-        distance = position - self.position
-        self.relmove(distance, delay=delay)
-
-    def relmove(self, distance, delay=.003):
-        """
-        Non-blocking relative move in millimeters.
-        """
-        self.running = True
-        steps = int(round(distance / self.per_step * self.ms))
-        t = threading.Thread(target=self._move, kwargs={'steps': steps, 'delay': delay})
-        t.start()
-
     def _step(self):
         GPIO.output(self.step_pin, GPIO.HIGH)
         GPIO.output(self.step_pin, GPIO.LOW)
@@ -120,6 +104,7 @@ class A4983(object):
         N_ACC = 200
         X_ACC = 5
 
+        self.running = True
         self.sleeping = False
         self._stopped = False
         reverse = False
@@ -158,9 +143,9 @@ class A4983(object):
 if __name__ == '__main__':
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
-    motor = A4983(pins=[15, 18, 14], mspins=[2, 3, 4], microstepping=8, soft_start=True)
+    motor = A4983(pins=[15, 18, 14], mspins=[2, 3, 4], microstepping=2, soft_start=False)
     try:
-        motor.relmove(2*360, delay=1e-3)
+        motor.relmove(360, delay=2e-3)
         while motor.running:
             time.sleep(.5)
     except KeyboardInterrupt:
