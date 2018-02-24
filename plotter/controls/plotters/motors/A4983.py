@@ -5,36 +5,64 @@ import numpy as np
 
 class A4983(object):
     """
-    Driver class for the A4983 stepper motor controller chip, as found
-    for example in the Olimex BB-A4983 driver. The basic functionality
-    also works for the Trinamic TMC2130 driver.
+    Driver class for the Allegro A4983 stepper motor controller chip, as
+    found for example in the Olimex BB-A4983 or Pololu drivers. It
+    assumes the pull up/down configuration of the Olimex board, but
+    probably works for the Pololu as well.
 
-    To do, among other things:
-    * split A4983/TMC2130 classes
-    * microstepping?
-    * sleep mode
-    * any way to reduce current without sleep?
+    The basic step/direction functionality also works for the Trinamic
+    TMC2130 driver.
     """
 
-    def __init__(self, pins, per_step=360/400.0, soft_start=True):
+    def __init__(self, pins, mspins=None, microstepping=1, 
+                 per_step=360/400.0, soft_start=False):
         """
         Input:
 
-        pins (list):       I/O pins connected to the A4983 (step,
-                           direction, sleep) pins.
-        per_step (float):  Physical units (mm or degrees, perhaps) per
-                           motor step.
-        soft_start (bool): Start motions with 5x delay and accelerate
-                           linearly over 200 steps.
+        pins (list):         I/O pins connected to the A4983 (step,
+                             direction, sleep) pins.
+        mspins (list):       I/O pins connected to the A4983 microstep
+                             configuration (MS1, MS2, MS3) pins.
+                             Default: None
+        microstepping (int): Number of microsteps per full step:
+                             1, 2, 4, 8, 16.
+                             Default: 1
+        per_step (float):    Physical units (mm or degrees, perhaps) per
+                             full motor step.
+                             Default: 360/400.0
+        soft_start (bool):   Start motions with 5x delay and accelerate
+                             linearly over 200 steps.
+                             Default: False
         """
 
-        self.per_step = per_step
-        self.step_pin, self.dir_pin, self.sleep_pin = pins
-        self.soft = soft_start
+        # map from the number of microsteps to ms1, ms2, ms3 pin values.
+        self.MS_MAP = {
+            1: [0, 0, 0],
+            2: [1, 0, 0],
+            4: [0, 1, 0],
+            8: [1, 1, 0],
+            16: [1, 1, 1]
+        }
 
+        # Parse input
+        self.per_step = float(per_step)
+        self.step_pin, self.dir_pin, self.sleep_pin = pins
+        if mspins is not None:
+            self.ms1_pin, self.ms2_pin, self.ms3_pin = mspins
+        self.soft = soft_start
+        self.ms = int(microstepping)
+        assert self.ms in self.MS_MAP.keys()
+        if not self.ms == 1:
+            assert mspins is not None
+
+        # set up GPIO pins
         GPIO.setup(self.step_pin, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(self.dir_pin, GPIO.OUT, initial=GPIO.LOW)
         self.sleeping = False
+        if mspins is not None:
+            GPIO.setup(self.ms1_pin, GPIO.OUT, initial=self.MS_MAP[self.ms][0])
+            GPIO.setup(self.ms2_pin, GPIO.OUT, initial=self.MS_MAP[self.ms][1])
+            GPIO.setup(self.ms3_pin, GPIO.OUT, initial=self.MS_MAP[self.ms][2])
 
         # absolute step position for keeping track of the position. set externally.
         self.abs_steps = 0
@@ -46,11 +74,11 @@ class A4983(object):
 
     @property
     def position(self):
-        return self.abs_steps * self.per_step
+        return self.abs_steps * self.per_step / self.ms
 
     @position.setter
     def position(self, val):
-        self.abs_steps = val / self.per_step
+        self.abs_steps = val / self.per_step * self.ms
 
     @property
     def sleeping(self):
@@ -76,7 +104,7 @@ class A4983(object):
         Non-blocking relative move in millimeters.
         """
         self.running = True
-        steps = int(round(distance / self.per_step))
+        steps = int(round(distance / self.per_step * self.ms))
         t = threading.Thread(target=self._move, kwargs={'steps': steps, 'delay': delay})
         t.start()
 
@@ -130,11 +158,11 @@ class A4983(object):
 if __name__ == '__main__':
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
-    motor = A4983(pins=[2, 3, 4])
+    motor = A4983(pins=[15, 18, 14], mspins=[2, 3, 4], microstepping=8, soft_start=True)
     try:
-        motor.relmove(40000*360, delay=.002)
+        motor.relmove(2*360, delay=1e-3)
         while motor.running:
             time.sleep(.5)
     except KeyboardInterrupt:
         motor.stop()
-    GPIO.cleanup()
+    #GPIO.cleanup()
