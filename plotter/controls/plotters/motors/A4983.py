@@ -6,9 +6,11 @@ import numpy as np
 class A4983(object):
     """
     Driver class for the A4983 stepper motor controller chip, as found
-    for example in the Olimex BB-A4983 driver.
+    for example in the Olimex BB-A4983 driver. The basic functionality
+    also works for the Trinamic TMC2130 driver.
 
     To do, among other things:
+    * split A4983/TMC2130 classes
     * microstepping?
     * sleep mode
     * any way to reduce current without sleep?
