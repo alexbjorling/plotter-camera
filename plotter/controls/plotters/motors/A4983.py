@@ -94,6 +94,7 @@ class A4983(BaseStepper):
 
     def _step(self):
         GPIO.output(self.step_pin, GPIO.HIGH)
+        time.sleep(10e-6)
         GPIO.output(self.step_pin, GPIO.LOW)
 
     def _move(self, steps, delay=.002):
