@@ -26,8 +26,9 @@ class BigVPlotter(object):
                         microstepping=2, soft_start=False,
                         per_step=-471/400.0)
 
-        self.m1.position = float(raw_input('left motor string length: '))
-        self.m2.position = float(raw_input('right motor string length: '))
+        # temporary values, should be set with self.position
+        self.m1.position = self.L / 2.0
+        self.m2.position = self.L / 2.0
 
         # minimum delay between steps
         self.min_delay = .002
@@ -35,6 +36,11 @@ class BigVPlotter(object):
     @property
     def position(self):
         return self._pos_to_xy(self.m1.position, self.m2.position)
+
+    @position.setter
+    def position(self, xy):
+        self.m1.position, self.m2.position =\
+            self._xy_to_pos(*xy)
 
     def _xy_to_pos(self, x, y):
         """
