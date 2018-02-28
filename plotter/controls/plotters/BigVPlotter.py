@@ -61,6 +61,122 @@ class BigVPlotter(object):
         self.m1.absmove(m1)
         self.m2.absmove(m2)
 
+    def _single_segment(self, x0, x1, y0, y1, T):
+        """
+        Takes a single straight segment of a Trajectory path (starting and
+        final x and y, and the total time T) and returns:
+            delays: (n-1) array of delays between motor steps
+            isleft: n array of booleans which are True for the left motor
+                    and False for the right motor
+            dir:    n array of direction scalars (1 for positive, -1 for
+                    negative moves, where positive means lengthening the
+                    string)
+        """
+
+        step = self.m1.per_step
+        L = self.L
+
+        # start and finish in motor coords
+        ml0, mr0 = self._xy_to_pos(x0, y0)
+        ml1, mr1 = self._xy_to_pos(x1, y1)
+
+        # round start and end coords to nearest cm
+        def round(x):
+            return np.round(x / step) * step
+        ml0 = round(ml0)
+        ml1 = round(ml1)
+        mr0 = round(mr0)
+        mr1 = round(mr1)
+
+        # calculate tl and tr
+        # helpers
+        Tx = (x1 - x0) / T
+        Ty = (y1 - y0) / T
+        a = Tx**2 + Ty**2
+        bl = 2 * x0 * Tx + 2 * y0 * Ty
+        cl = y0**2 + x0**2
+        br = (-2 * (L - x0) * Tx + 2 * y0 * Ty)
+        cr = (L - x0)**2 + y0**2
+
+        # tl:
+        tl = []
+        dirl = []
+        ml_ = ml0
+        t_ = 0
+        while t_ < T:
+            dl = x0 * Tx + y0 * Ty
+            ml_grad = 1 / ml_ * (dl + a * t_)
+            if ml_grad >= 0:
+                dirl.append(1)
+            else:
+                dirl.append(-1)
+            ml_ += dirl[-1] * step
+            tl.append((-bl + np.sign(dirl[-1]) * np.sqrt(max(0, bl**2 - 4 * a * (cl - ml_**2)))) / 2 / a)
+            t_ = tl[-1]
+            assert tl[-1] >= 0
+
+        # tr:
+        tr = []
+        dirr = []
+        mr_ = mr0
+        t_ = 0
+        while t_ < T:
+            dr = (x0 - L) * Tx + y0 * Ty
+            mr_grad = 1 / mr_ * (dr + a * t_)
+            if mr_grad >= 0:
+                dirr.append(1)
+            else:
+                dirr.append(-1)
+            mr_ += dirr[-1] * step
+            tr.append((-br + np.sign(dirr[-1]) * np.sqrt(max(0, br**2 - 4 * a * (cr - mr_**2)))) / 2 / a)
+            t_ = tr[-1]
+            assert tr[-1] >= 0
+        tr.pop(0)
+
+        # sort and assemble (using np.argsort, also tried manual walking)
+        nl = len(tl)
+        tlr = np.hstack((tl, tr))
+        dirlr = np.hstack((dirl, dirr))
+        inds = np.argsort(tlr)
+        tlr = tlr[inds]
+        dirlr = dirlr[inds]
+        isleft = inds < nl
+        del inds, tl, tr, dirl, dirr
+
+        return np.diff(tlr), isleft, dirlr
+
+    def prepare_waveform(self, path, velocity):
+        """
+        Takes a single path (in physical units) from a trajectory 
+        together with a velocity, and returns a synced waveform
+        as three arrays:
+            delays: (n-1) array of delays between motor steps
+            isleft: n array of booleans which are True for the left 
+                    motor and False for the right motor
+            dir:    n array of direction scalars (1 for positive, -1 for
+                    negative moves, where positive means lengthening the
+                    string)            
+        """
+        delays, isleft, direction = [], [], []
+        for i in range(1, path.shape[0]):
+            length = np.sqrt(np.sum((path[i, :] - path[i-1, :])**2))
+            T = length / float(velocity)
+            delay_, isleft_, dir_ = self._single_segment(
+                path[i-1, 0], path[i, 0], path[i-1, 1], path[i, 1], T)
+            delays += list(delay_)
+            delays.append(.5) ##################### fixme
+            isleft += list(isleft_)
+            direction += list(dir_)
+
+        return delays, isleft, direction
+
+    def run_waveform(self, delays, isleft, direction):
+        motormap = {True: self.m1, False: self.m2}
+        dirmap = {True: int(np.sign(self.m1.per_step)), False: int(np.sign(self.m2.per_step))}
+        for i in range(len(delays)):
+            dir_ = direction[i] * dirmap[isleft[i]]
+            motormap[isleft[i]]._move(dir_, delay=delays[i])
+
     def plot(self, traj):
         """
         Plot an entire Trajectory object.
@@ -87,20 +203,9 @@ class BigVPlotter(object):
             path_[:, 0] += offsetx
             path_[:, 1] += offsety
 
-            # move to start
-            m1, m2 = self._xy_to_pos(path_[0][0], path_[0][1])
-            self.m1.absmove(m1, delay=self.min_delay)
-            self.m2.absmove(m2, delay=self.min_delay)
-            while self.running:
-                time.sleep(.1)
+            raise NotImplementedError
 
-            # go
-            for i in range(path_.shape[0] - 1):
-                m1, m2 = self._xy_to_pos(path_[i+1][0], path_[i+1][1])
-                self.m1.absmove(m1, delay=self.min_delay)
-                self.m2.absmove(m2, delay=self.min_delay)
-                while self.running:
-                    time.sleep(.001)
+
 
     def __del__(self):
         """
@@ -109,9 +214,15 @@ class BigVPlotter(object):
         print 'Destroying %s object' % self.__class__.__name__
         self.m1.stop()
         self.m2.stop()
-        self.m3.stop()
 
     def test(self):
         from ...drawing import Rose
         traj = Rose()
         self.plot(traj)
+
+if __name__ == '__main__':
+    p = BigVPlotter()
+    path = np.array([[500,500], [1000,500], [1000,1000], [500,1000], [500,500]])
+    delays, isleft, direction = p.prepare_waveform(path, 300)
+    p.move(500, 500)
+    p.run_waveform(delays, isleft, direction)

@@ -57,9 +57,9 @@ class A4983(BaseStepper):
         if not self.ms == 1:
             assert mspins is not None
 
-        # set up GPIO pins
+        # set up GPIO pins (some through properties)
         GPIO.setup(self.step_pin, GPIO.OUT, initial=GPIO.LOW)
-        GPIO.setup(self.dir_pin, GPIO.OUT, initial=GPIO.LOW)
+        self.direction = 1
         self.sleeping = False
         if mspins is not None:
             GPIO.setup(self.ms1_pin, GPIO.OUT, initial=self.MS_MAP[self.ms][0])
@@ -71,6 +71,20 @@ class A4983(BaseStepper):
 
         # an internal stop signal
         self._stopped = False
+
+    @property
+    def direction(self):
+        return self._direction
+
+    @direction.setter
+    def direction(self, val):
+        self._direction = val
+        if val == 1:
+            GPIO.setup(self.dir_pin, GPIO.OUT, initial=GPIO.LOW)
+        elif val == -1:
+            GPIO.setup(self.dir_pin, GPIO.OUT, initial=GPIO.HIGH)
+        else:
+            raise Exception()
 
     @property
     def position(self):
@@ -99,8 +113,7 @@ class A4983(BaseStepper):
 
     def _move(self, steps, delay=.002):
         """
-        Blocking relative move in steps.
-
+        Blocking relative move in steps, hardware step direction.
         """
         N_ACC = 200
         X_ACC = 5
@@ -109,11 +122,11 @@ class A4983(BaseStepper):
         self.sleeping = False
         self._stopped = False
         reverse = False
-        GPIO.output(self.dir_pin, GPIO.LOW)
+        self.direction = 1
         if steps < 0:
             reverse = True
             steps = -steps
-            GPIO.output(self.dir_pin, GPIO.HIGH)
+            self.direction = -1
 
         # acceleration?
         if self.soft:
