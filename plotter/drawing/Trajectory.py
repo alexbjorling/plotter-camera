@@ -134,6 +134,14 @@ class Trajectory(object):
         self.paths = [data[k] for k in sorted(data.keys())]
         data.close()
 
+    def clean(self, min_length):
+        """
+        Remove paths shorter than min_length.
+        """
+        for i in range(len(self.paths) - 1, -1, -1):
+            if self.contour_length(path_index=i)[0] < min_length:
+                self.paths.pop(i)
+
     def optimize(self, timeout=10):
         """
         Optimize travel.
