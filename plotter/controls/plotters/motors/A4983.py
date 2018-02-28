@@ -86,6 +86,19 @@ class A4983(BaseStepper):
         else:
             raise Exception()
 
+    def step(self, dir):
+        """
+        Bare minimum single-step method.
+        """
+        if dir == 1:
+            self.abs_steps += 1
+            self.direction = 1
+            self._step()
+        elif dir == -1:
+            self.abs_steps -= 1
+            self.direction = -1
+            self._step()
+
     @property
     def position(self):
         return self.abs_steps * self.per_step

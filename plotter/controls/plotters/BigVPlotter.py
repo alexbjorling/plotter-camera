@@ -164,7 +164,7 @@ class BigVPlotter(object):
             delay_, isleft_, dir_ = self._single_segment(
                 path[i-1, 0], path[i, 0], path[i-1, 1], path[i, 1], T)
             delays += list(delay_)
-            delays.append(.5) ##################### fixme
+            delays.append(self.min_delay)
             isleft += list(isleft_)
             direction += list(dir_)
 
@@ -175,7 +175,8 @@ class BigVPlotter(object):
         dirmap = {True: int(np.sign(self.m1.per_step)), False: int(np.sign(self.m2.per_step))}
         for i in range(len(delays)):
             dir_ = direction[i] * dirmap[isleft[i]]
-            motormap[isleft[i]]._move(dir_, delay=delays[i])
+            motormap[isleft[i]].step(dir_)
+            time.sleep(delays[i])
 
     def plot(self, traj):
         """
@@ -222,7 +223,7 @@ class BigVPlotter(object):
 
 if __name__ == '__main__':
     p = BigVPlotter()
-    path = np.array([[500,500], [1000,500], [1000,1000], [500,1000], [500,500]])
-    delays, isleft, direction = p.prepare_waveform(path, 300)
-    p.move(500, 500)
-    p.run_waveform(delays, isleft, direction)
+    #path = np.array([[500,500], [1000,500], [1000,1000], [500,1000], [500,500]])
+    #delays, isleft, direction = p.prepare_waveform(path, 300)
+    #p.move(500, 500)
+    #p.run_waveform(delays, isleft, direction)
