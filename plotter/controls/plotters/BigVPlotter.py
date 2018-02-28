@@ -167,6 +167,9 @@ class BigVPlotter(object):
         for i in range(1, path.shape[0]):
             length = np.sqrt(np.sum((path[i, :] - path[i-1, :])**2))
             T = length / float(velocity)
+            #### FIXME: this misbehaves for many small consecutive movements,
+            #### we need to keep track of where the pen actually is after
+            #### each, so move from the actual position instead of path[i-i]
             delay_, isleft_, dir_ = self._single_segment(
                 path[i-1, 0], path[i, 0], path[i-1, 1], path[i, 1], T)
             delays += list(delay_)
