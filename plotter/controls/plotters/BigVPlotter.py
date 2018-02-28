@@ -77,9 +77,12 @@ class BigVPlotter(object):
             dir:    n array of direction scalars (1 for positive, -1 for
                     negative moves, where positive means lengthening the
                     string)
+            xfinal,
+            yfinal: the x, y coordinates where the waveform movement
+                    actually ends
         """
 
-        step = self.m1.per_step
+        step = np.abs(self.m1.per_step)
         L = self.L
 
         # start and finish in motor coords
@@ -90,9 +93,7 @@ class BigVPlotter(object):
         def round(x):
             return np.round(x / step) * step
         ml0 = round(ml0)
-        ml1 = round(ml1)
         mr0 = round(mr0)
-        mr1 = round(mr1)
 
         # calculate tl and tr
         # helpers
@@ -147,9 +148,10 @@ class BigVPlotter(object):
         tlr = tlr[inds]
         dirlr = dirlr[inds]
         isleft = inds < nl
-        del inds, tl, tr, dirl, dirr
 
-        return np.diff(tlr), isleft, dirlr
+        xfinal, yfinal = self._pos_to_xy(ml_, mr_)
+
+        return np.diff(tlr), isleft, dirlr, xfinal, yfinal
 
     def prepare_waveform(self, path, velocity):
         """
@@ -164,14 +166,12 @@ class BigVPlotter(object):
                     string)            
         """
         delays, isleft, direction = [], [], []
+        x, y = path[0, 0], path[0, 1]
         for i in range(1, path.shape[0]):
             length = np.sqrt(np.sum((path[i, :] - path[i-1, :])**2))
             T = length / float(velocity)
-            #### FIXME: this misbehaves for many small consecutive movements,
-            #### we need to keep track of where the pen actually is after
-            #### each, so move from the actual position instead of path[i-i]
-            delay_, isleft_, dir_ = self._single_segment(
-                path[i-1, 0], path[i, 0], path[i-1, 1], path[i, 1], T)
+            delay_, isleft_, dir_, x, y = self._single_segment(
+                x, path[i, 0], y, path[i, 1], T)
             delays += list(delay_)
             delays.append(self.min_delay)
             isleft += list(isleft_)
