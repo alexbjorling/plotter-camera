@@ -171,6 +171,9 @@ class BigVPlotter(object):
         return delays, isleft, direction
 
     def run_waveform(self, delays, isleft, direction):
+        """
+        Runs a consecutive waveform, as prepared by prepare_waveform().
+        """
         motormap = {True: self.m1, False: self.m2}
         dirmap = {True: int(np.sign(self.m1.per_step)), False: int(np.sign(self.m2.per_step))}
         for i in range(len(delays)):
@@ -178,24 +181,28 @@ class BigVPlotter(object):
             motormap[isleft[i]].step(dir_)
             time.sleep(delays[i])
 
-    def plot(self, traj):
+    def plot(self, traj, autoscale=True, velocity=300):
         """
         Plot an entire Trajectory object.
         """
 
-        # find scale and offset of the trajectory so that suitable motor
-        # position for path i, position j are
-        # ampl * traj.paths[i][j, :] + (offsetx, offsety)
-        xrng = traj.xrange
-        yrng = traj.yrange
-        xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
-        yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
-        ampl = min((xampl, yampl))
-        cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
-        ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
-        offsetx = self.xrange[0] + (self.xrange[1] - self.xrange[0]) / 2.0 - cenx * ampl
-        offsety = self.yrange[0] + (self.yrange[1] - self.yrange[0]) / 2.0 - ceny * ampl
-        del xrng, yrng, xampl, yampl, cenx, ceny
+        if autoscale:
+            # find scale and offset of the trajectory so that suitable motor
+            # position for path i, position j are
+            # ampl * traj.paths[i][j, :] + (offsetx, offsety)
+            xrng = traj.xrange
+            yrng = traj.yrange
+            xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
+            yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
+            ampl = min((xampl, yampl))
+            cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
+            ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
+            offsetx = self.xrange[0] + (self.xrange[1] - self.xrange[0]) / 2.0 - cenx * ampl
+            offsety = self.yrange[0] + (self.yrange[1] - self.yrange[0]) / 2.0 - ceny * ampl
+            del xrng, yrng, xampl, yampl, cenx, ceny
+        else:
+            ampl = 1
+            offsetx, offsety = 0, 0
 
         # plot the trajectory
         for path in traj:
@@ -204,8 +211,19 @@ class BigVPlotter(object):
             path_[:, 0] += offsetx
             path_[:, 1] += offsety
 
-            raise NotImplementedError
+            # move to starting position in the background
+            self.move(path_[0, 0], path_[0, 1])
 
+            # prepare a waveform
+            print 'preparing waveform...'
+            t0 = time.time()
+            delays, isleft, direction = self.prepare_waveform(path_, velocity)
+            print '...done in %.1f seconds' % (time.time() - t0)
+
+            # run the waveform when ready
+            while self.running:
+                time.sleep(.01)
+            p.run_waveform(delays, isleft, direction)
 
 
     def __del__(self):
