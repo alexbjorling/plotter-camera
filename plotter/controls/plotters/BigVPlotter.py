@@ -87,13 +87,6 @@ class BigVPlotter(object):
 
         # start and finish in motor coords
         ml0, mr0 = self._xy_to_pos(x0, y0)
-        ml1, mr1 = self._xy_to_pos(x1, y1)
-
-        # round start and end coords to nearest cm
-        def round(x):
-            return np.round(x / step) * step
-        ml0 = round(ml0)
-        mr0 = round(mr0)
 
         # calculate tl and tr
         # helpers
@@ -113,9 +106,12 @@ class BigVPlotter(object):
         while t_ < T:
             dl = x0 * Tx + y0 * Ty
             ml_grad = 1 / ml_ * (dl + a * t_)
-            if ml_grad >= 0:
+            if np.abs(ml_grad) < 1e-6:
+                # dml/dt = 0, consult second derivative
+                dirl.append(np.sign(a / ml_))
+            elif ml_grad > 0:
                 dirl.append(1)
-            else:
+            elif ml_grad < 0:
                 dirl.append(-1)
             ml_ += dirl[-1] * step
             tl.append((-bl + np.sign(dirl[-1]) * np.sqrt(max(0, bl**2 - 4 * a * (cl - ml_**2)))) / 2 / a)
@@ -130,9 +126,12 @@ class BigVPlotter(object):
         while t_ < T:
             dr = (x0 - L) * Tx + y0 * Ty
             mr_grad = 1 / mr_ * (dr + a * t_)
-            if mr_grad >= 0:
+            if np.abs(mr_grad) < 1e-6:
+                # dmr/dt = 0, consult second derivative
+                dirr.append(np.sign(a / mr_))
+            elif mr_grad > 0:
                 dirr.append(1)
-            else:
+            elif mr_grad < 0:
                 dirr.append(-1)
             mr_ += dirr[-1] * step
             tr.append((-br + np.sign(dirr[-1]) * np.sqrt(max(0, br**2 - 4 * a * (cr - mr_**2)))) / 2 / a)
@@ -168,7 +167,7 @@ class BigVPlotter(object):
         delays, isleft, direction = [], [], []
         x, y = path[0, 0], path[0, 1]
         for i in range(1, path.shape[0]):
-            length = np.sqrt(np.sum((path[i, :] - path[i-1, :])**2))
+            length = np.sqrt(np.sum((path[i, :] - np.array((x, y)))**2))
             T = length / float(velocity)
             delay_, isleft_, dir_, x, y = self._single_segment(
                 x, path[i, 0], y, path[i, 1], T)
