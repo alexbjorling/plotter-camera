@@ -40,6 +40,22 @@ class Trajectory(object):
         if new.shape[0] > 1:
             self.paths.append(new)
 
+    def yflip(self):
+        """
+        Flips the trajectory within its y-range.
+        """
+        yrng = self.yrange
+        for path in self:
+            path[:, 1] = 2 * yrng[0] - path[:, 1] + yrng[1]
+
+    def xflip(self):
+        """
+        Flips the trajectory within its y-range.
+        """
+        xrng = self.xrange
+        for path in self:
+            path[:, 0] = 2 * xrng[0] - path[:, 0] + xrng[1]
+
     def contour_length(self, path_index=None):
         """
         Calculate the total length of a trajectory, or of a single path.
@@ -73,14 +89,14 @@ class Trajectory(object):
 
     @property
     def xrange(self):
-        mn = min([min(c[:, 0]) for c in self.paths])
-        mx = max([max(c[:, 0]) for c in self.paths])
+        mn = min([c[:, 0].min() for c in self.paths])
+        mx = max([c[:, 0].max() for c in self.paths])
         return (mn, mx)
 
     @property
     def yrange(self):
-        mn = min([min(c[:, 1]) for c in self.paths])
-        mx = max([max(c[:, 1]) for c in self.paths])
+        mn = min([c[:, 1].min() for c in self.paths])
+        mx = max([c[:, 1].max() for c in self.paths])
         return (mn, mx)
 
     def plot(self, movie=False, shape=None, **kwargs):
