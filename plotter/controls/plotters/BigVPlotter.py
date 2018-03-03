@@ -21,13 +21,14 @@ class BigVPlotter(object):
 
         self.m1 = A4983(pins=[8, 25, 7], mspins=[10, 9, 11],
                         microstepping=2, soft_start=False,
-                        per_step=471/400.0)
+                        per_step= (75-3)*2*np.pi/400.0)
         self.m2 = A4983(pins=[15, 18, 14], mspins=[2, 3, 4], 
                         microstepping=2, soft_start=False,
-                        per_step=-471/400.0)
+                        per_step=-(75-3)*2*np.pi/400.0)
 
-        self.m1.position = float(raw_input('left motor string length: '))
-        self.m2.position = float(raw_input('right motor string length: '))
+        # temporary values, should be set with self.position
+        self.m1.position = self.L / 2.0
+        self.m2.position = self.L / 2.0
 
         # minimum delay between steps
         self.min_delay = .002
@@ -35,6 +36,11 @@ class BigVPlotter(object):
     @property
     def position(self):
         return self._pos_to_xy(self.m1.position, self.m2.position)
+
+    @position.setter
+    def position(self, xy):
+        self.m1.position, self.m2.position =\
+            self._xy_to_pos(*xy)
 
     def _xy_to_pos(self, x, y):
         """
@@ -71,9 +77,12 @@ class BigVPlotter(object):
             dir:    n array of direction scalars (1 for positive, -1 for
                     negative moves, where positive means lengthening the
                     string)
+            xfinal,
+            yfinal: the x, y coordinates where the waveform movement
+                    actually ends
         """
 
-        step = self.m1.per_step
+        step = np.abs(self.m1.per_step)
         L = self.L
 
         # start and finish in motor coords
@@ -84,9 +93,7 @@ class BigVPlotter(object):
         def round(x):
             return np.round(x / step) * step
         ml0 = round(ml0)
-        ml1 = round(ml1)
         mr0 = round(mr0)
-        mr1 = round(mr1)
 
         # calculate tl and tr
         # helpers
@@ -141,9 +148,10 @@ class BigVPlotter(object):
         tlr = tlr[inds]
         dirlr = dirlr[inds]
         isleft = inds < nl
-        del inds, tl, tr, dirl, dirr
 
-        return np.diff(tlr), isleft, dirlr
+        xfinal, yfinal = self._pos_to_xy(ml_, mr_)
+
+        return np.diff(tlr), isleft, dirlr, xfinal, yfinal
 
     def prepare_waveform(self, path, velocity):
         """
@@ -158,11 +166,12 @@ class BigVPlotter(object):
                     string)            
         """
         delays, isleft, direction = [], [], []
+        x, y = path[0, 0], path[0, 1]
         for i in range(1, path.shape[0]):
             length = np.sqrt(np.sum((path[i, :] - path[i-1, :])**2))
             T = length / float(velocity)
-            delay_, isleft_, dir_ = self._single_segment(
-                path[i-1, 0], path[i, 0], path[i-1, 1], path[i, 1], T)
+            delay_, isleft_, dir_, x, y = self._single_segment(
+                x, path[i, 0], y, path[i, 1], T)
             delays += list(delay_)
             delays.append(self.min_delay)
             isleft += list(isleft_)
@@ -171,6 +180,9 @@ class BigVPlotter(object):
         return delays, isleft, direction
 
     def run_waveform(self, delays, isleft, direction):
+        """
+        Runs a consecutive waveform, as prepared by prepare_waveform().
+        """
         motormap = {True: self.m1, False: self.m2}
         dirmap = {True: int(np.sign(self.m1.per_step)), False: int(np.sign(self.m2.per_step))}
         for i in range(len(delays)):
@@ -178,24 +190,28 @@ class BigVPlotter(object):
             motormap[isleft[i]].step(dir_)
             time.sleep(delays[i])
 
-    def plot(self, traj):
+    def plot(self, traj, autoscale=True, velocity=300):
         """
         Plot an entire Trajectory object.
         """
 
-        # find scale and offset of the trajectory so that suitable motor
-        # position for path i, position j are
-        # ampl * traj.paths[i][j, :] + (offsetx, offsety)
-        xrng = traj.xrange
-        yrng = traj.yrange
-        xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
-        yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
-        ampl = min((xampl, yampl))
-        cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
-        ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
-        offsetx = self.xrange[0] + (self.xrange[1] - self.xrange[0]) / 2.0 - cenx * ampl
-        offsety = self.yrange[0] + (self.yrange[1] - self.yrange[0]) / 2.0 - ceny * ampl
-        del xrng, yrng, xampl, yampl, cenx, ceny
+        if autoscale:
+            # find scale and offset of the trajectory so that suitable motor
+            # position for path i, position j are
+            # ampl * traj.paths[i][j, :] + (offsetx, offsety)
+            xrng = traj.xrange
+            yrng = traj.yrange
+            xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
+            yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
+            ampl = min((xampl, yampl))
+            cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
+            ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
+            offsetx = self.xrange[0] + (self.xrange[1] - self.xrange[0]) / 2.0 - cenx * ampl
+            offsety = self.yrange[0] + (self.yrange[1] - self.yrange[0]) / 2.0 - ceny * ampl
+            del xrng, yrng, xampl, yampl, cenx, ceny
+        else:
+            ampl = 1
+            offsetx, offsety = 0, 0
 
         # plot the trajectory
         for path in traj:
@@ -204,8 +220,19 @@ class BigVPlotter(object):
             path_[:, 0] += offsetx
             path_[:, 1] += offsety
 
-            raise NotImplementedError
+            # move to starting position in the background
+            self.move(path_[0, 0], path_[0, 1])
 
+            # prepare a waveform
+            print 'preparing waveform...'
+            t0 = time.time()
+            delays, isleft, direction = self.prepare_waveform(path_, velocity)
+            print '...done in %.1f seconds' % (time.time() - t0)
+
+            # run the waveform when ready
+            while self.running:
+                time.sleep(.01)
+            p.run_waveform(delays, isleft, direction)
 
 
     def __del__(self):
