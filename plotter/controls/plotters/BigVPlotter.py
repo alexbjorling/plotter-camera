@@ -21,10 +21,10 @@ class BigVPlotter(object):
 
         self.m1 = A4983(pins=[8, 25, 7], mspins=[10, 9, 11],
                         microstepping=2, soft_start=False,
-                        per_step=471/400.0)
+                        per_step= (75-3)*2*np.pi/400.0)
         self.m2 = A4983(pins=[15, 18, 14], mspins=[2, 3, 4], 
                         microstepping=2, soft_start=False,
-                        per_step=-471/400.0)
+                        per_step=-(75-3)*2*np.pi/400.0)
 
         # temporary values, should be set with self.position
         self.m1.position = self.L / 2.0
