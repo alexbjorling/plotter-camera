@@ -137,7 +137,6 @@ class BigVPlotter(object):
             tr.append((-br + np.sign(dirr[-1]) * np.sqrt(max(0, br**2 - 4 * a * (cr - mr_**2)))) / 2 / a)
             t_ = tr[-1]
             assert tr[-1] >= 0
-        tr.pop(0)
 
         # sort and assemble (using np.argsort, also tried manual walking)
         nl = len(tl)
