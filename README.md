@@ -3,8 +3,8 @@ to do drawing:
 * add more filters and find good balance
 * semantics
 
-bugs:
-* some lines, where the amplitudes are small, drift away.
+bugs?:
+* waveforms pause in between segments, especially large ones?
 * think through the range signs and types wrt scaling
 
 to do controls:
