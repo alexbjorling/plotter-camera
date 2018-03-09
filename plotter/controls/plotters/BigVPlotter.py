@@ -1,4 +1,5 @@
-from motors.A4983 import A4983
+from motors import A4983
+from motors import PenLifter
 import RPi.GPIO as GPIO
 import time
 import numpy as np
@@ -32,6 +33,8 @@ class BigVPlotter(object):
 
         # minimum delay between steps
         self.min_delay = .002
+
+        self.pen = PenLifter(up_pos=180, down_pos=90)
 
     @property
     def position(self):
@@ -182,7 +185,8 @@ class BigVPlotter(object):
         Runs a consecutive waveform, as prepared by prepare_waveform().
         """
         motormap = {True: self.m1, False: self.m2}
-        dirmap = {True: int(np.sign(self.m1.per_step)), False: int(np.sign(self.m2.per_step))}
+        dirmap = {True: int(np.sign(self.m1.per_step)),
+                  False: int(np.sign(self.m2.per_step))}
         for i in range(len(delays)):
             dir_ = direction[i] * dirmap[isleft[i]]
             motormap[isleft[i]].step(dir_)
@@ -192,6 +196,8 @@ class BigVPlotter(object):
         """
         Plot an entire Trajectory object.
         """
+
+        self.pen.up()
 
         if autoscale:
             # find scale and offset of the trajectory so that suitable motor
@@ -230,7 +236,11 @@ class BigVPlotter(object):
             # run the waveform when ready
             while self.running:
                 time.sleep(.01)
+            self.pen.down()
+            time.sleep(1.0)
             p.run_waveform(delays, isleft, direction)
+            self.pen.up()
+            time.sleep(1.0)
 
 
     def __del__(self):
@@ -248,7 +258,5 @@ class BigVPlotter(object):
 
 if __name__ == '__main__':
     p = BigVPlotter()
-    #path = np.array([[500,500], [1000,500], [1000,1000], [500,1000], [500,500]])
-    #delays, isleft, direction = p.prepare_waveform(path, 300)
-    #p.move(500, 500)
-    #p.run_waveform(delays, isleft, direction)
+    p.xrange=(600,1100)
+    p.yrange=(500,1200)

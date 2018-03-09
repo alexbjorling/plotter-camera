@@ -53,6 +53,7 @@ class PenLifter(Servo):
 
         self._up = up_pos
         self._down = down_pos
+        self.up()
 
     def up(self):
         self.position = self._up
