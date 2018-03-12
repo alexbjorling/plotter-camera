@@ -12,6 +12,8 @@ dtoverlay=pwm,pin=19
 """
 
 import pigpio
+import time
+import numpy as np
 
 class Servo(object):
 
@@ -48,15 +50,24 @@ class Servo(object):
 
 class PenLifter(Servo):
 
-    def __init__(self, up_pos=0, down_pos=90, **kwargs):
+    def __init__(self, up_pos=0, down_pos=90, move_time=.5, **kwargs):
         super(self.__class__, self).__init__(**kwargs)
 
         self._up = up_pos
         self._down = down_pos
+        self._time = move_time
         self.up()
 
     def up(self):
-        self.position = self._up
+        dt = self._time / 30.0
+        for val in np.linspace(self.position, self._up, 30):
+            self.position = val
+            time.sleep(dt)
+        #self.position = self._up
 
     def down(self):
-        self.position = self._down
+        dt = self._time / 30.0
+        for val in np.linspace(self.position, self._down, 30):
+            self.position = val
+            time.sleep(dt)
+        #self.position = self._down
