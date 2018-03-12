@@ -164,6 +164,71 @@ class Trajectory(object):
         """
         one_opt(self, timeout)
 
+    def add_frame(self, margin=0.05, brackets=None):
+        """
+        Adds a frame before the Trajectory. To remove added frame, use
+        my_traj.paths.pop(0).
+
+        margin:     Margin between existing pahts and the frame, as a
+                    fraction of the largest side of the current plot.
+        brackets:   If specified, make corner brackets instead of full
+                    frame. Bracket length specified as fraction of the
+                    largest side of the plot. Default to None, which
+                    results in a full frame.
+        """
+
+        # calculate margins
+        x = self.xrange
+        y = self.yrange
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        if dx > dy:
+            dm = dx * margin
+        else:
+            dm = dy * margin
+
+        # add frame or brackets
+        if brackets is not None:
+            if dx > dy:
+                db = dx * brackets
+            else:
+                db = dy * brackets
+            c1 = np.array([
+                [x[0] - dm, y[0] - dm + db],
+                [x[0] - dm, y[0] - dm],
+                [x[0] - dm + db, y[0] - dm],
+                ])
+            self.paths.insert(0, c1)
+            c2 = np.array([
+                [x[1] + dm - db, y[0] - dm],
+                [x[1] + dm, y[0] - dm],
+                [x[1] + dm, y[0] - dm + db],
+                ])
+            self.paths.insert(0, c2)
+
+            c3 = np.array([
+                [x[1] + dm, y[1] + dm - db],
+                [x[1] + dm, y[1] + dm],
+                [x[1] + dm - db, y[1] + dm],
+                ])
+            self.paths.insert(0, c3)
+
+            c4 = np.array([
+                [x[0] - dm, y[1] + dm - db],
+                [x[0] - dm, y[1] + dm],
+                [x[0] - dm + db, y[1] + dm],
+                ])
+            self.paths.insert(0, c4)
+        else:
+            frame = np.array([
+                [x[0] - dm, y[0] - dm],
+                [x[1] + dm, y[0] - dm],
+                [x[1] + dm, y[1] + dm],
+                [x[0] - dm, y[1] + dm],
+                [x[0] - dm, y[0] - dm],
+                ])
+            self.paths.insert(0, frame)
+
 
 class Rose(Trajectory):
     """
