@@ -121,6 +121,13 @@ class BigVPlotter(object):
             t_ = tl[-1]
             assert tl[-1] >= 0
 
+            if t_ > T:
+                # overshoot protection: for some reason, going too far
+                # gives outrageous values of t. Unclear why!
+                ml_ -= dirl[-1] * step
+                tl.pop()
+                dirl.pop()
+
         # tr:
         tr = []
         dirr = []
@@ -141,6 +148,13 @@ class BigVPlotter(object):
             t_ = tr[-1]
             assert tr[-1] >= 0
 
+            if t_ > T:
+                # overshoot protection: for some reason, going too far
+                # gives outrageous values of t. Unclear why!
+                mr_ -= dirr[-1] * step
+                tr.pop()
+                dirr.pop()
+
         # sort and assemble (using np.argsort, also tried manual walking)
         nl = len(tl)
         tlr = np.hstack((tl, tr))
@@ -152,7 +166,12 @@ class BigVPlotter(object):
 
         xfinal, yfinal = self._pos_to_xy(ml_, mr_)
 
-        return np.diff(tlr), isleft, dirlr, xfinal, yfinal
+        # tlr is the time for each step, so the np.diff(tlr) is the delay
+        # between the steps. but the first step should be delayed with
+        # respect to t=0.
+        delays = np.diff(np.hstack(([0.0,], tlr)))
+
+        return delays, isleft, dirlr, xfinal, yfinal
 
     def prepare_waveform(self, path, velocity):
         """
@@ -174,7 +193,6 @@ class BigVPlotter(object):
             delay_, isleft_, dir_, x, y = self._single_segment(
                 x, path[i, 0], y, path[i, 1], T)
             delays += list(delay_)
-            delays.append(self.min_delay)
             isleft += list(isleft_)
             direction += list(dir_)
 
@@ -188,9 +206,9 @@ class BigVPlotter(object):
         dirmap = {True: int(np.sign(self.m1.per_step)),
                   False: int(np.sign(self.m2.per_step))}
         for i in range(len(delays)):
+            time.sleep(delays[i])
             dir_ = direction[i] * dirmap[isleft[i]]
             motormap[isleft[i]].step(dir_)
-            time.sleep(delays[i])
 
     def plot(self, traj, autoscale=True, velocity=300):
         """
