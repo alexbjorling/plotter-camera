@@ -243,6 +243,50 @@ class Rose(Trajectory):
         self.append(curve)
 
 
+class TestPattern(Trajectory):
+    """
+    Test class which generates a Trajectory with various shapes.
+    """
+    def __init__(self):
+        super(self.__class__, self).__init__()
+
+        # squares
+        square = np.array([[0,0], [0,1], [1,1], [1,0], [0,0]])
+        self.append(square)
+        self.append(square + 1)
+        self.append(square + np.array([1, 2]))
+
+        # rose
+        rose = Rose()
+        self.append(rose[0] + np.array([3.5, 1]))
+
+        # text
+        from svgpathtools import svg2paths
+        def xy(compl):
+            return [np.real(compl), -np.imag(compl)]
+        scale = 1 / 40.0
+        shift = np.array([-.8, 13])
+        paths, attributes = svg2paths('ABC.svg')
+        for path in paths:
+            p = []
+            for i, line in enumerate(path):
+                if i == 0:
+                    p.append(xy(line.start))
+                    p.append(xy(line.end))
+                elif np.isclose(line.start, oldline.end):
+                    p.append(xy(line.end))
+                else:
+                    self.append(np.array(p) * scale + shift)
+                    p = []
+                    p.append(xy(line.start))
+                    p.append(xy(line.end))
+                oldline = line
+            self.append(np.array(p) * scale + shift)
+
+        # frame
+        self.add_frame(brackets=.15)
+
+
 # example usage
 if __name__ == '__main__':
     # add paths
