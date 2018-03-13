@@ -2,6 +2,7 @@ to do drawing:
 * path optimization
 * add more filters and find good balance
 * semantics
+* SVG parsing
 
 bugs?:
 * waveforms pause in between segments, especially large ones?
