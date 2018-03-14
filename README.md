@@ -2,7 +2,7 @@ to do drawing:
 * path optimization
 * add more filters and find good balance
 * semantics
-* SVG parsing
+* SVG parsing: do the stepper math for Bezier curves or make a Trajectory.from_svg() method that bisects paths to lines?
 
 bugs?:
 * waveforms pause in between segments, especially large ones?
