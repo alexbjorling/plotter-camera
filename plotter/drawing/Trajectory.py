@@ -56,6 +56,64 @@ class Trajectory(object):
         for path in self:
             path[:, 0] = 2 * xrng[0] - path[:, 0] + xrng[1]
 
+    def scale(self, scaling, keep_center=False):
+        """
+        Scales all paths by scaling=(cx, cy) or by scaling=cxy.
+
+        keep_center:  Keep the Trajectory in the same place while
+                      scaling. Otherwise, all absolute coordinates are
+                      scaled.
+        """
+        scaling = np.array(scaling)
+        old_xrng = self.xrange
+        old_yrng = self.yrange
+        for path in self:
+            path[:] = path[:] * scaling
+        if keep_center:
+            old_center = np.array((old_xrng[1] + old_xrng[0],
+                                   old_yrng[1] + old_yrng[0])) / 2.0
+            new_center = np.array((self.xrange[1] + self.xrange[0],
+                                   self.yrange[1] + self.yrange[0])) / 2.0
+            self.shift(old_center - new_center)
+
+    def shift(self, shift):
+        """
+        Shifts all paths by shift=(dx, dy) or by shift=dxy.
+        """
+        shift = np.array(shift)
+        for path in self:
+            path[:] = path[:] + shift
+
+    def fit(self, x_range, y_range, keep_aspect=True):
+        """
+        Rescales the Trajectory to fit in the specified region. Useful
+        for converting arbitrary Trajectories into motor positions.
+
+        keep_aspect:  Whether to keep the aspect ratio of the
+                      Trajectory. If False, the Trajectory is stretched
+                      to fill the full area.
+        """
+
+        # find scale and offset of the trajectory so that resulting
+        # positions for path i, position j are
+        # ampl * traj.paths[i][j, :] + (offsetx, offsety)
+        xrng = self.xrange
+        yrng = self.yrange
+        xampl = float(x_range[1] - x_range[0]) / (xrng[1] - xrng[0])
+        yampl = float(y_range[1] - y_range[0]) / (yrng[1] - yrng[0])
+        if keep_aspect:
+            ampl = np.array((min((xampl, yampl)),) * 2)
+        else:
+            ampl = np.array([xampl, yampl])
+        cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
+        ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
+        offsetx = x_range[0] + (x_range[1] - x_range[0]) / 2.0 - cenx * ampl[0]
+        offsety = y_range[0] + (y_range[1] - y_range[0]) / 2.0 - ceny * ampl[1]
+
+        # convert
+        self.scale(ampl)
+        self.shift((offsetx, offsety))
+
     def contour_length(self, path_index=None):
         """
         Calculate the total length of a trajectory, or of a single path.

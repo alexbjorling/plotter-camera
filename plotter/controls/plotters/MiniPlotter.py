@@ -89,34 +89,19 @@ class MiniPlotter(object):
         self.m2.absmove(y, delay=dt[1])
         self.m3.absmove(y, delay=dt[2])
 
-    def plot(self, traj):
+    def plot(self, traj, autoscale=True):
         """
         Plot an entire Trajectory object.
         """
 
-        # find scale and offset of the trajectory so that suitable motor
-        # position for path i, position j are
-        # ampl * traj.paths[i][j, :] + (offsetx, offsety)
-        xrng = traj.xrange
-        yrng = traj.yrange
-        xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
-        yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
-        ampl = min((xampl, yampl))
-        cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
-        ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
-        offsetx = self.xrange[0] + (self.xrange[1] - self.xrange[0]) / 2.0 - cenx * ampl
-        offsety = self.yrange[0] + (self.yrange[1] - self.yrange[0]) / 2.0 - ceny * ampl
-        del xrng, yrng, xampl, yampl, cenx, ceny
+        if autoscale:
+            traj.fit(self.xrange, self.yrange, keep_aspect=True)
 
         # plot the trajectory
         for path in traj:
-            # convert to motor positions
-            path_ = path * ampl
-            path_[:, 0] += offsetx
-            path_[:, 1] += offsety
 
             # pre-calculate the motor speeds for a smoother ride
-            movements = np.diff(path_, axis=0)
+            movements = np.diff(path, axis=0)
             absmovements = np.abs(movements)
             dtx, dty = [], []
             for i in range(movements.shape[0]):
@@ -133,15 +118,15 @@ class MiniPlotter(object):
             dty = np.array(dty)
 
             # move to start
-            self.collective_move(path_[0][0], path_[0][1])
+            self.collective_move(path[0][0], path[0][1])
             while self.running:
                 time.sleep(.1)
 
             # go
-            for i in range(path_.shape[0] - 1):
-                self.m1.absmove(path_[i+1][0], delay=dtx[i])
-                self.m2.absmove(path_[i+1][1], delay=dty[i])
-                self.m3.absmove(path_[i+1][1], delay=dty[i])
+            for i in range(path.shape[0] - 1):
+                self.m1.absmove(path[i+1][0], delay=dtx[i])
+                self.m2.absmove(path[i+1][1], delay=dty[i])
+                self.m3.absmove(path[i+1][1], delay=dty[i])
                 while self.running:
                     time.sleep(.001)
 

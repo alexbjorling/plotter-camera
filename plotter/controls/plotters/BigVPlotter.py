@@ -218,37 +218,18 @@ class BigVPlotter(object):
         self.pen.up()
 
         if autoscale:
-            # find scale and offset of the trajectory so that suitable motor
-            # position for path i, position j are
-            # ampl * traj.paths[i][j, :] + (offsetx, offsety)
-            xrng = traj.xrange
-            yrng = traj.yrange
-            xampl = float(self.xrange[1] - self.xrange[0]) / (xrng[1] - xrng[0])
-            yampl = float(self.yrange[1] - self.yrange[0]) / (yrng[1] - yrng[0])
-            ampl = min((xampl, yampl))
-            cenx = xrng[0] + (xrng[1] - xrng[0]) / 2.0
-            ceny = yrng[0] + (yrng[1] - yrng[0]) / 2.0
-            offsetx = self.xrange[0] + (self.xrange[1] - self.xrange[0]) / 2.0 - cenx * ampl
-            offsety = self.yrange[0] + (self.yrange[1] - self.yrange[0]) / 2.0 - ceny * ampl
-            del xrng, yrng, xampl, yampl, cenx, ceny
-        else:
-            ampl = 1
-            offsetx, offsety = 0, 0
+            traj.fit(self.xrange, self.yrange, keep_aspect=True)
 
         # plot the trajectory
         for path in traj:
-            # convert to motor positions
-            path_ = path * ampl
-            path_[:, 0] += offsetx
-            path_[:, 1] += offsety
 
             # move to starting position in the background
-            self.move(path_[0, 0], path_[0, 1])
+            self.move(path[0, 0], path[0, 1])
 
             # prepare a waveform
             print 'preparing waveform...'
             t0 = time.time()
-            delays, isleft, direction = self.prepare_waveform(path_, velocity)
+            delays, isleft, direction = self.prepare_waveform(path, velocity)
             print '...done in %.1f seconds' % (time.time() - t0)
 
             # run the waveform when ready
