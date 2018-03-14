@@ -46,15 +46,15 @@ class Trajectory(object):
         """
         yrng = self.yrange
         for path in self:
-            path[:, 1] = 2 * yrng[0] - path[:, 1] + yrng[1]
+            path[:, 1] = yrng[0] - path[:, 1] + yrng[1]
 
     def xflip(self):
         """
-        Flips the trajectory within its y-range.
+        Flips the trajectory within its x-range.
         """
         xrng = self.xrange
         for path in self:
-            path[:, 0] = 2 * xrng[0] - path[:, 0] + xrng[1]
+            path[:, 0] = xrng[0] - path[:, 0] + xrng[1]
 
     def scale(self, scaling, keep_center=False):
         """
@@ -309,14 +309,14 @@ class TestPattern(Trajectory):
         super(self.__class__, self).__init__()
 
         # squares
-        square = np.array([[0,0], [0,1], [1,1], [1,0], [0,0]])
+        square = np.array([[0,0], [0,1], [1,1], [1,0], [0,0]], dtype=float)
         self.append(square)
         self.append(square + 1)
         self.append(square + np.array([1, 2]))
 
         # rose
         rose = Rose()
-        self.append(rose[0] + np.array([3.5, 1]))
+        self.append(rose[0] + np.array([3.5, 1], dtype=float))
 
         # text
         from svgpathtools import svg2paths
@@ -334,12 +334,12 @@ class TestPattern(Trajectory):
                 elif np.isclose(line.start, oldline.end):
                     p.append(xy(line.end))
                 else:
-                    self.append(np.array(p) * scale + shift)
+                    self.append(np.array(p, dtype=float) * scale + shift)
                     p = []
                     p.append(xy(line.start))
                     p.append(xy(line.end))
                 oldline = line
-            self.append(np.array(p) * scale + shift)
+            self.append(np.array(p, dtype=float) * scale + shift)
 
         # frame
         self.add_frame(brackets=.15)
