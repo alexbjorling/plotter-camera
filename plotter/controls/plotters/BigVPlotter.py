@@ -1,4 +1,4 @@
-from motors import A4983
+from motors import TMC2130
 from motors import PenLifter
 import RPi.GPIO as GPIO
 import time
@@ -20,11 +20,9 @@ class BigVPlotter(object):
 
         GPIO.setmode(GPIO.BCM)
 
-        self.m1 = A4983(pins=[8, 25, 7], mspins=[10, 9, 11],
-                        microstepping=2, soft_start=False,
+        self.m1 = TMC2130(pins=[9, 10], microstepping=16,
                         per_step= (75-3)*2*np.pi/400.0)
-        self.m2 = A4983(pins=[15, 18, 14], mspins=[2, 3, 4], 
-                        microstepping=2, soft_start=False,
+        self.m2 = TMC2130(pins=[3, 2], microstepping=16,
                         per_step=-(75-3)*2*np.pi/400.0)
 
         # temporary values, should be set with self.position
@@ -32,7 +30,7 @@ class BigVPlotter(object):
         self.m2.position = self.L / 2.0
 
         # minimum delay between steps
-        self.min_delay = .002
+        self.min_delay = .001
 
         self.pen = PenLifter(up_pos=180, down_pos=90)
 
@@ -67,8 +65,8 @@ class BigVPlotter(object):
 
     def move(self, x, y):
         m1, m2 = self._xy_to_pos(x, y)
-        self.m1.absmove(m1)
-        self.m2.absmove(m2)
+        self.m1.absmove(m1, delay=self.min_delay)
+        self.m2.absmove(m2, delay=self.min_delay)
 
     def _single_segment(self, x0, x1, y0, y1, T):
         """
