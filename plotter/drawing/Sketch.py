@@ -14,7 +14,7 @@ class Sketch(object):
     drawing trajectories in various ways.
     """
 
-    def __init__(self, image=None, max_size=300):
+    def __init__(self, image=None, max_size=None):
         """
         Constructor.
 
@@ -24,7 +24,7 @@ class Sketch(object):
         if image is not None:
             self.read_image(image, max_size)
 
-    def read_image(self, image, max_size):
+    def read_image(self, image, max_size=None):
         if type(image) == str:
             self.image = cv2.cvtColor(
                 cv2.imread(image, cv2.IMREAD_UNCHANGED),
@@ -42,8 +42,9 @@ class Sketch(object):
         self.image = self.image.astype(np.uint8)
 
         # resize image
-        scale = float(max_size) / np.max(self.image.shape)
-        self.image = cv2.resize(self.image, (0, 0), fx=scale, fy=scale)
+        if max_size is not None:
+            scale = float(max_size) / np.max(self.image.shape)
+            self.image = cv2.resize(self.image, (0, 0), fx=scale, fy=scale)
 
     def amplitude_mod_scan(self, n_lines, pixels_per_period, gain=1,
                            waveform='square', snake_scan=True):
