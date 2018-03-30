@@ -85,6 +85,18 @@ class Trajectory(object):
         for path in self:
             path[:] = path[:] + shift
 
+    def rotate(self):
+        """
+        Rotates the plot by 90 degrees around its center. Could be
+        generalized.
+        """
+        xpivot = np.mean(self.xrange)
+        ypivot = np.mean(self.yrange)
+        for path in self:
+            x = path[:,1] - ypivot + xpivot
+            y = -path[:,0] + xpivot + ypivot
+            path[:] = np.vstack((x, y)).T
+
     def fit(self, x_range, y_range, keep_aspect=True):
         """
         Rescales the Trajectory to fit in the specified region. Useful
