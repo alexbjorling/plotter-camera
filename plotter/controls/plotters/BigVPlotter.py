@@ -72,10 +72,10 @@ class BigVPlotter(object):
         """
         Takes a single straight segment of a Trajectory path (starting and
         final x and y, and the total time T) and returns:
-            delays: (n-1) array of delays between motor steps
-            isleft: n array of booleans which are True for the left motor
-                    and False for the right motor
-            dir:    n array of direction scalars (1 for positive, -1 for
+            delays: array of delays to apply before each motor step
+            isleft: array of booleans which are True for the left 
+                    motor and False for the right motor
+            dir:    array of direction scalars (1 for positive, -1 for
                     negative moves, where positive means lengthening the
                     string)
             xfinal,
@@ -102,6 +102,7 @@ class BigVPlotter(object):
         # tl:
         tl = []
         dirl = []
+        mlsteps_ = 0
         ml_ = ml0
         t_ = 0
         while t_ < T:
@@ -114,7 +115,8 @@ class BigVPlotter(object):
                 dirl.append(1)
             elif ml_grad < 0:
                 dirl.append(-1)
-            ml_ += dirl[-1] * step
+            mlsteps_ += dirl[-1]
+            ml_ = ml0 + mlsteps_ * step
             tl.append((-bl + np.sign(dirl[-1]) * np.sqrt(max(0, bl**2 - 4 * a * (cl - ml_**2)))) / 2 / a)
             t_ = tl[-1]
             assert tl[-1] >= 0
@@ -129,6 +131,7 @@ class BigVPlotter(object):
         # tr:
         tr = []
         dirr = []
+        mrsteps_ = 0
         mr_ = mr0
         t_ = 0
         while t_ < T:
@@ -141,7 +144,8 @@ class BigVPlotter(object):
                 dirr.append(1)
             elif mr_grad < 0:
                 dirr.append(-1)
-            mr_ += dirr[-1] * step
+            mrsteps_ += dirr[-1] 
+            mr_ = mr0 + mrsteps_ * step
             tr.append((-br + np.sign(dirr[-1]) * np.sqrt(max(0, br**2 - 4 * a * (cr - mr_**2)))) / 2 / a)
             t_ = tr[-1]
             assert tr[-1] >= 0
@@ -176,12 +180,12 @@ class BigVPlotter(object):
         Takes a single path (in physical units) from a trajectory 
         together with a velocity, and returns a synced waveform
         as three arrays:
-            delays: (n-1) array of delays between motor steps
-            isleft: n array of booleans which are True for the left 
+            delays: array of delays to apply before each motor step
+            isleft: array of booleans which are True for the left 
                     motor and False for the right motor
-            dir:    n array of direction scalars (1 for positive, -1 for
+            dir:    array of direction scalars (1 for positive, -1 for
                     negative moves, where positive means lengthening the
-                    string)            
+                    string)
         """
         delays, isleft, direction = [], [], []
         x, y = path[0, 0], path[0, 1]
@@ -219,13 +223,13 @@ class BigVPlotter(object):
             traj.fit(self.xrange, self.yrange, keep_aspect=True)
 
         # plot the trajectory
-        for path in traj:
+        for i, path in enumerate(traj):
 
             # move to starting position in the background
             self.move(path[0, 0], path[0, 1])
 
             # prepare a waveform
-            print 'preparing waveform...'
+            print 'preparing waveform %d/%d...' % (i, len(traj))
             t0 = time.time()
             delays, isleft, direction = self.prepare_waveform(path, velocity)
             print '...done in %.1f seconds' % (time.time() - t0)
