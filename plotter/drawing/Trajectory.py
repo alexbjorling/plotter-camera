@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from TrajectoryOptimization import one_opt
 try:
     import matplotlib.pyplot as plt
@@ -287,6 +288,36 @@ class Trajectory(object):
                 ])
             self.paths.insert(0, frame)
 
+    def add_from_svg(self, svgfile, scale=1.0, shift=[0.0, 0.0]):
+        """
+        Reads an SVG file and adds to the Trajectory object.
+
+        NOTE: This is very rudimentary still and only works for lines,
+        not Bezier curves or text or anything else. Bezier curves seem
+        to become lines, though.
+        """
+        scale = float(scale)
+        shift = np.array(shift)
+        from svgpathtools import svg2paths
+        def xy(compl):
+            return [np.real(compl), -np.imag(compl)]
+        paths, attributes = svg2paths(svgfile)
+        for path in paths:
+            p = []
+            for i, line in enumerate(path):
+                if i == 0:
+                    p.append(xy(line.start))
+                    p.append(xy(line.end))
+                elif np.isclose(line.start, oldline.end):
+                    p.append(xy(line.end))
+                else:
+                    self.append(np.array(p, dtype=float) * scale + shift)
+                    p = []
+                    p.append(xy(line.start))
+                    p.append(xy(line.end))
+                oldline = line
+            self.append(np.array(p, dtype=float) * scale + shift)
+
 
 class Rose(Trajectory):
     """
@@ -319,27 +350,7 @@ class TestPattern(Trajectory):
         self.append(rose[0] + np.array([3.5, 1], dtype=float))
 
         # text
-        from svgpathtools import svg2paths
-        def xy(compl):
-            return [np.real(compl), -np.imag(compl)]
-        scale = 1 / 40.0
-        shift = np.array([-.8, 13])
-        paths, attributes = svg2paths('ABC.svg')
-        for path in paths:
-            p = []
-            for i, line in enumerate(path):
-                if i == 0:
-                    p.append(xy(line.start))
-                    p.append(xy(line.end))
-                elif np.isclose(line.start, oldline.end):
-                    p.append(xy(line.end))
-                else:
-                    self.append(np.array(p, dtype=float) * scale + shift)
-                    p = []
-                    p.append(xy(line.start))
-                    p.append(xy(line.end))
-                oldline = line
-            self.append(np.array(p, dtype=float) * scale + shift)
+        self.add_from_svg('ABC.svg', scale=1/40.0, shift=[-.8, 13])
 
         # frame
         self.add_frame(brackets=.15)
