@@ -3,6 +3,10 @@ to do drawing:
 * add more filters and find good balance
 * semantics
 * SVG parsing: do the stepper math for Bezier curves or make a Trajectory.from_svg() method that bisects paths to lines?
+    * pro: smooth lines at the resolution of the steppers
+    * con: Trajectory has to be complicated to include curve type and control point info
+    * con: maths might not be possible or at least have to be done for each curve type
+    * con: operations on Trajectory (like optimization) won't work so well
 
 bugs?:
 * waveforms pause in between segments, especially large ones?
