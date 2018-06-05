@@ -20,7 +20,7 @@ class BigVPlotter(object):
 
         GPIO.setmode(GPIO.BCM)
 
-        self.m1 = TMC2130(pins=[9, 10], microstepping=16,
+        self.m1 = TMC2130(pins=[27, 22], microstepping=16,
                         per_step= (75-3)*2*np.pi/400.0)
         self.m2 = TMC2130(pins=[3, 2], microstepping=16,
                         per_step=-(75-3)*2*np.pi/400.0)
