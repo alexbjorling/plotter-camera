@@ -1,2 +1,2 @@
 from MiniPlotter import MiniPlotter
-from BigVPlotter import BigVPlotter
+from BigVPlotter import BigVPlotter, SmallVPlotter

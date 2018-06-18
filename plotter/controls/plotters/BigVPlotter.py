@@ -6,7 +6,7 @@ import numpy as np
 
 class BigVPlotter(object):
     """
-    Class representing a large V-plotter built from two Olimex drivers.
+    Class representing a large V-plotter built from two TMC2130 drivers.
 
     Origin at left motor point.
     """
@@ -256,6 +256,36 @@ class BigVPlotter(object):
         from ...drawing import Rose
         traj = Rose()
         self.plot(traj)
+
+class SmallVPlotter(BigVPlotter):
+    """
+    Class representing a smaller V plotter.
+
+    Origin at left motor point.
+    """
+
+    def __init__(self, separation=700.0,
+        xrng=(50.0, 650.0), yrng=(-1000., -50.)):
+
+        self.L = separation
+        self.xrange = xrng
+        self.yrange = yrng
+
+        GPIO.setmode(GPIO.BCM)
+
+        self.m1 = TMC2130(pins=[3, 2], microstepping=16,
+                        per_step= (30.5)*2*np.pi/200.0)
+        self.m2 = TMC2130(pins=[6, 5], microstepping=16,
+                        per_step=-(30.5)*2*np.pi/200.0)
+
+        # temporary values, should be set with self.position
+        self.m1.position = self.L / 2.0
+        self.m2.position = self.L / 2.0
+
+        # minimum delay between steps
+        self.min_delay = .001
+
+        self.pen = PenLifter(up_pos=180, down_pos=90)
 
 if __name__ == '__main__':
     p = BigVPlotter()
