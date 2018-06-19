@@ -363,7 +363,8 @@ class TestPattern(Trajectory):
         self.append(rose[0] + np.array([3.5, 1], dtype=float))
 
         # text
-        self.add_from_svg('ABC.svg', scale=1/40.0, shift=[-.8, 13])
+        fn = os.path.join(os.path.dirname(__file__), 'ABC.svg')
+        self.add_from_svg(fn, scale=1/40.0, shift=[-.8, 13])
 
         # frame
         self.add_frame(brackets=.15)

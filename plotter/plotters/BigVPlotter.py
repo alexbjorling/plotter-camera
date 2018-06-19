@@ -254,8 +254,8 @@ class BigVPlotter(object):
         self.m2.stop()
 
     def test(self):
-        from ..drawing import Rose
-        traj = Rose()
+        from ..drawing import TestPattern
+        traj = TestPattern()
         self.plot(traj)
 
 class SmallVPlotter(BigVPlotter):
