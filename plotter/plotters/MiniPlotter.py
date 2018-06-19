@@ -146,6 +146,6 @@ class MiniPlotter(object):
         self.m3.stop()
 
     def test(self):
-        from ...drawing import Rose
+        from ..drawing import Rose
         traj = Rose()
         self.plot(traj)
