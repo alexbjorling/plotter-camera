@@ -3,6 +3,8 @@ Dummy module corresponding to RPi.GPIO, for dry running on non RPi
 machines.
 """
 
+print "Using dummy GPIO."
+
 IN, OUT = 0, 0
 LOW, HIGH = 0, 0
 BCM = 0

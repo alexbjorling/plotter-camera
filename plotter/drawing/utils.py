@@ -1,6 +1,11 @@
 import numpy as np
-import cv2
-import skimage
+
+try:
+    import skimage
+    HAS_SKIM = True
+except ImportError:
+    HAS_SKIM = False
+
 from .Trajectory import Trajectory
 
 
@@ -30,6 +35,8 @@ def filter_out_blobs(image, cutoff_area):
     Takes an image and returns a version with only contiguous blobs
     with an area above cutoff_area left.
     """
+    if not HAS_SKIM:
+        raise RuntimeError('This operation requires skimage.')
     skimage.morphology.remove_small_objects(image, min_size=cutoff_area, connectivity=2, in_place=True)
     return image
 
