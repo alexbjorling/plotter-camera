@@ -1,3 +1,10 @@
+installation:
+* python setup.py install --user
+* for PWM you have to set that up, see Servo.py
+* then you also need pigpio running:
+    sudo pigpiod
+
+
 to do drawing:
 * path optimization
 * add more filters and find good balance

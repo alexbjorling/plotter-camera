@@ -244,6 +244,9 @@ class BigVPlotter(object):
             self.pen.up()
             time.sleep(1.0)
 
+    def stop(self):
+        self.m1.stop()
+        self.m2.stop()
 
     def __del__(self):
         """

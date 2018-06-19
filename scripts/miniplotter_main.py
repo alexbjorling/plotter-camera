@@ -1,12 +1,12 @@
 """
-Sketch of the main program.
+Sketch of a main program for a MiniPlotter camera device.
 """
 
 import RPi.GPIO as GPIO
 import time
-from plotter.controls.plotters import MiniPlotter
-from plotter.controls.plotters.motors import LED
-from plotter.controls import Camera
+from plotter.plotters import MiniPlotter
+from plotter.plotters.motors import LED
+from plotter.gadgets import Camera
 from plotter.drawing import Sketch
 from plotter.drawing import utils
 
