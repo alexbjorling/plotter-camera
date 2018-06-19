@@ -1,6 +1,9 @@
-from motors.L9110 import L9110
-from motors.LimitSwitch import LimitSwitch
-import RPi.GPIO as GPIO
+from ..motors.L9110 import L9110
+from ..gadgets.LimitSwitch import LimitSwitch
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    from ..motors import DummyIO as GPIO
 import time
 import numpy as np
 

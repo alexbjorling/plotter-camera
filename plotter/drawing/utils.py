@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import skimage
-from Trajectory import Trajectory
+from .Trajectory import Trajectory
 
 
 def bin_pixels(image, m=1, n=1):

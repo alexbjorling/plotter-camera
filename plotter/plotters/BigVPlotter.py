@@ -1,6 +1,9 @@
-from motors import TMC2130
-from motors import PenLifter
-import RPi.GPIO as GPIO
+from ..motors import TMC2130
+from ..motors import PenLifter
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    from ..motors import DummyIO as GPIO
 import time
 import numpy as np
 
@@ -17,8 +20,6 @@ class BigVPlotter(object):
         self.L = separation
         self.xrange = xrng
         self.yrange = yrng
-
-        GPIO.setmode(GPIO.BCM)
 
         self.m1 = TMC2130(pins=[20, 21], microstepping=16,
                         per_step= (75-3)*2*np.pi/400.0)
@@ -239,7 +240,7 @@ class BigVPlotter(object):
                 time.sleep(.01)
             self.pen.down()
             time.sleep(1.0)
-            p.run_waveform(delays, isleft, direction)
+            self.run_waveform(delays, isleft, direction)
             self.pen.up()
             time.sleep(1.0)
 
@@ -264,19 +265,17 @@ class SmallVPlotter(BigVPlotter):
     Origin at left motor point.
     """
 
-    def __init__(self, separation=700.0,
-        xrng=(50.0, 650.0), yrng=(-1000., -50.)):
+    def __init__(self, separation=780.0,
+        xrng=(100.0, 680.0), yrng=(100,1000)):
 
         self.L = separation
         self.xrange = xrng
         self.yrange = yrng
 
-        GPIO.setmode(GPIO.BCM)
-
         self.m1 = TMC2130(pins=[3, 2], microstepping=16,
-                        per_step= (30.5)*2*np.pi/200.0)
-        self.m2 = TMC2130(pins=[6, 5], microstepping=16,
                         per_step=-(30.5)*2*np.pi/200.0)
+        self.m2 = TMC2130(pins=[6, 5], microstepping=16,
+                        per_step=(30.5)*2*np.pi/200.0)
 
         # temporary values, should be set with self.position
         self.m1.position = self.L / 2.0
@@ -287,7 +286,8 @@ class SmallVPlotter(BigVPlotter):
 
         self.pen = PenLifter(up_pos=180, down_pos=90)
 
+    def plot(self, traj, autoscale=True, velocity=20):
+        super(SmallVPlotter, self).plot(traj, autoscale, velocity)
+
 if __name__ == '__main__':
-    p = BigVPlotter()
-    p.xrange=(600,1100)
-    p.yrange=(500,1200)
+    p = SmallVPlotter()

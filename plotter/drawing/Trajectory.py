@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from TrajectoryOptimization import one_opt
+from .TrajectoryOptimization import one_opt
 try:
     import matplotlib.pyplot as plt
     HAS_PLT = True
@@ -323,6 +323,7 @@ class Trajectory(object):
                 elif np.isclose(line.start, oldline.end):
                     p.append(xy(line.end))
                 else:
+                    # a path doesn't have to be continuous, which we catch here
                     self.append(np.array(p, dtype=float) * scale + shift)
                     p = []
                     p.append(xy(line.start))

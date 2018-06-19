@@ -11,7 +11,11 @@ channels with a different dtoverlay.
 dtoverlay=pwm,pin=19
 """
 
-import pigpio
+try:
+    import pigpio
+    HAS_PIGPIO = True
+except ImportError:
+    HAS_PIGPIO = False
 import time
 import numpy as np
 
@@ -32,6 +36,8 @@ class Servo(object):
         self._pin = pin
         self._duty = low + (high - low) / 2.0
 
+        if not HAS_PIGPIO:
+            raise RuntimeError('Need pigpio for this operation.')
         self._pi = pigpio.pi()
         self._update()
 

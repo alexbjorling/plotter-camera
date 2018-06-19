@@ -1,5 +1,8 @@
-from BaseStepper import BaseStepper
-import RPi.GPIO as GPIO
+from .BaseStepper import BaseStepper
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    from ..gadgets import DummyIO as GPIO
 import time
 
 class L9110(BaseStepper):

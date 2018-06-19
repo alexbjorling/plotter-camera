@@ -1,4 +1,5 @@
-import plotter
+import plotter.drawing
+import plotter.plotters
 
 # read or acquire an image
 #camera = plotter.controls.Camera()
@@ -10,5 +11,5 @@ sketch = plotter.drawing.Sketch('plotter/drawing/image.jpg')
 traj = sketch.frequencyModScan(nLines=30, pixelsPerTypicalPeriod=2.1, waveform='sawtooth')
 
 # plot it
-mp = plotter.controls.plotters.MiniPlotter()
+mp = plotter.plotters.MiniPlotter()
 mp.plot(traj)

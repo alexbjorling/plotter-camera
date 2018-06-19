@@ -1,4 +1,4 @@
-from plotter.controls.plotters import MiniPlotter
+from plotter.plotters import MiniPlotter
 import time
 
 mp = MiniPlotter()

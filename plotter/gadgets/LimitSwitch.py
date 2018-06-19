@@ -2,7 +2,10 @@
 General limit switch.
 """
 
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    from . import DummyIO as GPIO
 
 class LimitSwitch(object):
     def __init__(self, pin, mode='NO', load=0):

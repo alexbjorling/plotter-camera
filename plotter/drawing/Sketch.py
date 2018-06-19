@@ -1,11 +1,19 @@
 import numpy as np
-import utils
-import cv2
-from skimage.morphology import skeletonize
+from . import utils
+try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    HAS_CV2 = False
+try:
+    from skimage.morphology import skeletonize
+    HAS_SKIM = True
+except ImportError:
+    HAS_SKIM = False
 import time
 
-from Trajectory import Trajectory
-import Filters
+from .Trajectory import Trajectory
+from . import Filters
 
 
 class Sketch(object):
@@ -25,6 +33,8 @@ class Sketch(object):
             self.read_image(image, max_size)
 
     def read_image(self, image, max_size=None):
+        if not HAS_CV2:
+            raise RuntimeError('OpenCV needed for this operation')
         if type(image) == str:
             self.image = cv2.cvtColor(
                 cv2.imread(image, cv2.IMREAD_UNCHANGED),
@@ -162,6 +172,9 @@ class Sketch(object):
 
         min_blob_size: edges with an area below this value are filtered out
         """
+        if not HAS_SKIM:
+            raise "skimage needed for this operation"
+
         image = self.image.astype(np.float64)
 
         mask = np.zeros(shape=image.shape, dtype=np.bool)
