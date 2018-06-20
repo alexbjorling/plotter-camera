@@ -213,7 +213,7 @@ class BigVPlotter(object):
             dir_ = direction[i] * dirmap[isleft[i]]
             motormap[isleft[i]].step(dir_)
 
-    def plot(self, traj, autoscale=True, velocity=300):
+    def plot(self, traj, autoscale=True, velocity=30):
         """
         Plot an entire Trajectory object.
         """
@@ -256,10 +256,11 @@ class BigVPlotter(object):
         self.m1.stop()
         self.m2.stop()
 
-    def test(self):
+    def test(self, **kwargs):
         from ..drawing import TestPattern
         traj = TestPattern()
-        self.plot(traj)
+        traj.yflip()
+        self.plot(traj, **kwargs)
 
 class SmallVPlotter(BigVPlotter):
     """
