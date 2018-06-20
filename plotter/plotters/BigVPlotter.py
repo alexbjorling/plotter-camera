@@ -213,7 +213,8 @@ class BigVPlotter(object):
             dir_ = direction[i] * dirmap[isleft[i]]
             motormap[isleft[i]].step(dir_)
 
-    def plot(self, traj, autoscale=True, velocity=30):
+    def plot(self, traj, autoscale=True, velocity=30, pen_up_delay=1.0,
+                   pen_down_delay=1.0):
         """
         Plot an entire Trajectory object.
         """
@@ -239,10 +240,10 @@ class BigVPlotter(object):
             while self.running:
                 time.sleep(.01)
             self.pen.down()
-            time.sleep(1.0)
+            time.sleep(pen_down_delay)
             self.run_waveform(delays, isleft, direction)
             self.pen.up()
-            time.sleep(1.0)
+            time.sleep(pen_up_delay)
 
     def stop(self):
         self.m1.stop()
