@@ -1,6 +1,7 @@
 import numpy as np
-import os
 from .TrajectoryOptimization import one_opt
+from ..drawing import TEST_SVG
+
 try:
     import matplotlib.pyplot as plt
     HAS_PLT = True
@@ -363,8 +364,7 @@ class TestPattern(Trajectory):
         self.append(rose[0] + np.array([3.5, 1], dtype=float))
 
         # text
-        fn = os.path.join(os.path.dirname(__file__), 'ABC.svg')
-        self.add_from_svg(fn, scale=1/40.0, shift=[-.8, 13])
+        self.add_from_svg(TEST_SVG, scale=1/40.0, shift=[-.8, 13])
 
         # frame
         self.add_frame(brackets=.15)
