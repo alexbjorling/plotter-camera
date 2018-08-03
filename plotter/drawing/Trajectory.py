@@ -309,6 +309,16 @@ class Trajectory(object):
         not Bezier curves or text or anything else. Bezier curves seem
         to become lines, though.
         """
+
+        def _clear_double_lines(p):
+            """
+            sometimes single lines are provided as closed paths, which
+            causes double trajectories and is annoying. this function
+            operates on lists.
+            """
+            if len(p) == 3 and np.isclose(p[0], p[-1]).all():
+                p.pop(-1)
+
         scale = float(scale)
         shift = np.array(shift)
         from svgpathtools import svg2paths
@@ -325,11 +335,13 @@ class Trajectory(object):
                     p.append(xy(line.end))
                 else:
                     # a path doesn't have to be continuous, which we catch here
+                    _clear_double_lines(p)
                     self.append(np.array(p, dtype=float) * scale + shift)
                     p = []
                     p.append(xy(line.start))
                     p.append(xy(line.end))
                 oldline = line
+            _clear_double_lines(p)
             self.append(np.array(p, dtype=float) * scale + shift)
 
 
