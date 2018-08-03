@@ -18,6 +18,6 @@ def difference_of_gaussians(image, larger_filter_size=5, smaller_filter_size=3,
             raise RuntimeError('This operation requires scipy.')
         image_small_filter = ndimage.filters.gaussian_filter(image, larger_filter_size)
         image_large_filter = ndimage.filters.gaussian_filter(image, smaller_filter_size)
-        difference_image = image_small_filter - image_large_filter
+        difference_image = image_large_filter - image_small_filter
         thresholded_image = difference_image > threshold
         return thresholded_image
