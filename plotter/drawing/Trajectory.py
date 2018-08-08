@@ -22,7 +22,7 @@ class Trajectory(object):
     def __init__(self, load=None):
         self.paths = []
         if load:
-            self.load(load)
+            self._load(load)
 
     def __getitem__(self, ind):
         return self.paths[ind]
@@ -209,18 +209,41 @@ class Trajectory(object):
         """
         Write trajectory to file.
         """
+        if filename.split('.')[-1].lower() == 'svg':
+            self._dump_svg(filename)
+        else:
+            self._dump_npz(filename)
+
+    def _dump_npz(self, filename):
         # pack list of arrays with defined keys to maintain ordering
         packing = {'arr_%06d' % i: self.paths[i] for i in range(len(self.paths))}
         np.savez(filename, **packing)
 
-    def load(self, filename):
+    def _dump_svg(self, filename):
+        from svgpathtools import Path, Line, wsvg
+        pathlist = []
+        for path in self.paths:
+            p = Path()
+            for i in range(1, path.shape[0]):
+                start = path[i-1, 0] - path[i-1, 1] * 1j
+                end = path[i, 0] - path[i, 1] * 1j
+                p.append(Line(start, end))
+            pathlist.append(p)
+        wsvg(pathlist, filename=filename)
+
+    def _load(self, filename):
         """
         Load and overwrite trajectory from file.
         """
-        assert filename[-4:] == '.npz'
-        data = np.load(filename)
-        self.paths = [data[k] for k in sorted(data.keys())]
-        data.close()
+        if filename[-4:].lower() == '.npz':
+            data = np.load(filename)
+            self.paths = [data[k] for k in sorted(data.keys())]
+            data.close()
+        elif filename[-4:].lower() == '.svg':
+            self.paths = []
+            self._add_from_svg(filename)
+        else:
+            raise RuntimeError('Bad file suffix, npz or svg expected.')
 
     def clean(self, min_length):
         """
@@ -301,7 +324,7 @@ class Trajectory(object):
                 ])
             self.paths.insert(0, frame)
 
-    def add_from_svg(self, svgfile, scale=1.0, shift=[0.0, 0.0]):
+    def _add_from_svg(self, svgfile, scale=1.0, shift=[0.0, 0.0]):
         """
         Reads an SVG file and adds to the Trajectory object.
 
@@ -376,7 +399,7 @@ class TestPattern(Trajectory):
         self.append(rose[0] + np.array([3.5, 1], dtype=float))
 
         # text
-        self.add_from_svg(TEST_SVG, scale=1/40.0, shift=[-.8, 13])
+        self._add_from_svg(TEST_SVG, scale=1/40.0, shift=[-.8, 13])
 
         # frame
         self.add_frame(brackets=.15)

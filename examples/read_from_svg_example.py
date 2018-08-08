@@ -6,8 +6,7 @@ the plot on screen.
 from plotter.drawing import Trajectory, TEST_SVG
 import matplotlib.pyplot as plt
 
-myTraj = Trajectory()
-myTraj.add_from_svg(TEST_SVG)
+myTraj = Trajectory(load=TEST_SVG)
 
 # Preview the Trajectory on screen...
 myTraj.plot()
@@ -15,3 +14,6 @@ plt.show()
 
 # ...or save the trajectory as an npz file
 myTraj.dump('/tmp/my_svg_plot.npz')
+
+# ...or as another svg file
+myTraj.dump('/tmp/my_svg_plot.svg')
