@@ -8,6 +8,12 @@ try:
 except:
     HAS_PLT = False
 
+try:
+    import scipy.signal
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+
 
 class Trajectory(object):
     """
@@ -366,6 +372,30 @@ class Trajectory(object):
                 oldline = line
             _clear_double_lines(p)
             self.append(np.array(p, dtype=float) * scale + shift)
+
+    def smooth(self, window_length=7, polyorder=2, **kwargs):
+        """
+        In place Savitsky-Golay smoothing of the trajectory. Done on raw
+        x and y arrays so points better be pretty equally spaced. Useful
+        for smoothing densely sampled trajectories like those tracing
+        pixelated images.
+        """
+        if not HAS_SCIPY:
+            raise RuntimeError('This operation requires scipy.')
+
+        for i, path in enumerate(self):
+            try:
+                xnew = scipy.signal.savgol_filter(path[:,0],
+                                                  window_length=window_length,
+                                                  polyorder=polyorder,
+                                                  **kwargs)
+                ynew = scipy.signal.savgol_filter(path[:,1],
+                                                  window_length=window_length,
+                                                  polyorder=polyorder,
+                                                  **kwargs)
+                self.paths[i] = np.stack((xnew, ynew), axis=-1)
+            except TypeError:
+                pass
 
 
 class Rose(Trajectory):

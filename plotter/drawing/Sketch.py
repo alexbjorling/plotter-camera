@@ -160,7 +160,8 @@ class Sketch(object):
                                "threshold": 3
                                }
                                     }],
-                        min_blob_size=100):
+                        min_blob_size=100,
+                        smooth=False, **kwargs):
         """
         Makes a pencil drawing of the image, returned as a Trajectory.
         We find ridges by a difference-of-Gaussians filter
@@ -171,6 +172,10 @@ class Sketch(object):
             The value of the item is a dict of keywords passed to the filter function.
 
         min_blob_size: edges with an area below this value are filtered out
+
+        smooth: Whether to smooth the drawing to lose pixel steps
+
+        **kwargs: passed to scipy.signal.savgol_filter through Trajectory.smooth
         """
         if not HAS_SKIM:
             raise "skimage needed for this operation"
@@ -192,6 +197,12 @@ class Sketch(object):
         t0 = time.time(); print 'tracing...'
         traj = utils.pixels_to_trajectory(skeletonized)
         print '...%f' % (time.time() - t0)
+
+        # smooth
+        if smooth:
+            print 'smoothing...'
+            traj.smooth(**kwargs)
+
         return traj
 
     def _make_snake_scan(self, traj):
