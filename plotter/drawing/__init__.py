@@ -3,5 +3,5 @@ import os
 TEST_SVG = os.path.join(os.path.dirname(__file__), 'ABC.svg')
 TEST_PNG = os.path.join(os.path.dirname(__file__), 'image.jpg')
 
-from .Trajectory import Trajectory, Rose, TestPattern
+from .Trajectory import Trajectory, Rose, TestPattern, Spiral
 from .Sketch import Sketch
