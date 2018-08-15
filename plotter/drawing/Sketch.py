@@ -205,6 +205,49 @@ class Sketch(object):
 
         return traj
 
+    def multiple_shifted_lines_plot(self, n_lines, n_scans, gain=1,
+                                    snake_scan=True):
+        """
+        Returns a Trajectory consisting of multiple overlapping line scans,
+        for the current image with darkness modulated by the vertical offset
+        between scans.
+        """
+
+        master_trajectory = Trajectory()
+        for max_offset in np.linspace(-gain, gain, n_scans):
+            scan_trajectory = self._shifted_lines_plot(n_lines=n_lines, max_offset=max_offset,
+                                                       snake_scan=snake_scan)
+            master_trajectory.paths += scan_trajectory.paths # Maybe implement Trajectory.__add__?
+            # Todo: Add option to start every other iteration from the bottom
+        return master_trajectory
+
+    def _shifted_lines_plot(self, n_lines, max_offset=1, snake_scan=True):
+        """
+        Returns line scan Trajectory for the current image with darkness
+        modulated as vertical offset.
+        """
+
+        linewidth = self.image.shape[0] / n_lines
+        binnedImage = utils.bin_pixels(self.image, m=linewidth, n=1)
+        lines = Trajectory()
+        for line in range(n_lines):
+            # j is the horizontal pixel index, one for each horizontal step
+            j = np.arange(binnedImage.shape[1])
+            # the darkness per stop of this particular line
+            lineIntensity = (255.0 - binnedImage[line]) / 255.0
+            # scale the waveform
+            i = max_offset * lineIntensity * linewidth / 2.0
+            # add the row offset
+            i += (linewidth * line + linewidth / 2)
+            # convert to cartesian coordinates
+            xy = np.vstack((j, n_lines * linewidth - i)).T
+            lines.append(xy)
+
+        if snake_scan:
+            self._make_snake_scan(lines)
+
+        return lines
+
     def _make_snake_scan(self, traj):
         """
         Make a raster scan a snake scan in-place.
