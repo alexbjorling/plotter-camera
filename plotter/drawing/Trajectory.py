@@ -1,6 +1,7 @@
 import numpy as np
 from .TrajectoryOptimization import one_opt
 from ..drawing import TEST_SVG
+from . import bezier_utils
 
 try:
     import matplotlib.pyplot as plt
@@ -334,10 +335,16 @@ class Trajectory(object):
         """
         Reads an SVG file and adds to the Trajectory object.
 
-        NOTE: This is very rudimentary still and only works for lines,
-        not Bezier curves or text or anything else. Bezier curves seem
-        to become lines, though.
+        Does all sorts of Bezier curves (including lines), but not arcs
+        or text.
         """
+        from svgpathtools import svg2paths
+
+        def _xy(compl):
+            """
+            svgpathtools gives xy points as complex numbers
+            """
+            return [np.real(compl), -np.imag(compl)]
 
         def _clear_double_lines(p):
             """
@@ -350,28 +357,35 @@ class Trajectory(object):
 
         scale = float(scale)
         shift = np.array(shift)
-        from svgpathtools import svg2paths
-        def xy(compl):
-            return [np.real(compl), -np.imag(compl)]
+
         paths, attributes = svg2paths(svgfile)
         for path in paths:
             p = []
-            for i, line in enumerate(path):
+            for i, segment in enumerate(path):
+                if np.allclose(segment.bpoints()[0], segment.bpoints()):
+                    # catches stupid null segments which otherwise cause infinite recursion...
+                    continue
+                points = [_xy(c) for c in segment.bpoints()]
+                flattened, hit_limit = bezier_utils.flatten_bezier(points)
+                if hit_limit:
+                    print "Warning! Bezier bisection didn't converge."
                 if i == 0:
-                    p.append(xy(line.start))
-                    p.append(xy(line.end))
-                elif np.isclose(line.start, oldline.end):
-                    p.append(xy(line.end))
+                    # first point on a path
+                    p.extend(flattened)
+                elif np.isclose(segment.start, oldsegment.end):
+                    # continuation of a path
+                    p.extend(flattened[1:])
                 else:
                     # a path doesn't have to be continuous, which we catch here
-                    _clear_double_lines(p)
-                    self.append(np.array(p, dtype=float) * scale + shift)
+                    if len(p):
+                        _clear_double_lines(p)
+                        self.append(np.array(p, dtype=float) * scale + shift)
                     p = []
-                    p.append(xy(line.start))
-                    p.append(xy(line.end))
-                oldline = line
-            _clear_double_lines(p)
-            self.append(np.array(p, dtype=float) * scale + shift)
+                    p.extend(flattened)
+                oldsegment = segment
+            if len(p):
+                _clear_double_lines(p)
+                self.append(np.array(p, dtype=float) * scale + shift)
 
     def smooth(self, window_length=7, polyorder=2, **kwargs):
         """
@@ -429,39 +443,7 @@ class TestPattern(Trajectory):
         self.append(rose[0] + np.array([3.5, 1], dtype=float))
 
         # text
-        self._add_from_svg(TEST_SVG, scale=1/40.0, shift=[-.8, 13])
+        self._add_from_svg(TEST_SVG, scale=1/40.0, shift=[-.8, 12])
 
         # frame
         self.add_frame(brackets=.15)
-
-
-# example usage
-if __name__ == '__main__':
-    # add paths
-    x = [0, 1, 1, 2, 3]
-    y = [0, 0, 1, 1, 2]
-    p = np.vstack((x, y)).T
-    traj = Trajectory()
-    traj.append(p)
-    traj.append(p + 5)
-
-    # save and load
-    traj.dump('/tmp/trajectory.npz')
-    del traj
-    traj = Trajectory(load='/tmp/trajectory.npz')
-
-    # get spanned x and y ranges
-    print traj.xrange
-    print traj.yrange
-
-    # calculate contour length
-    print traj.contour_length()              # 8.828
-    print traj.contour_length(path_index=0)  # 4.414 - just the first path
-
-    # iterate over paths
-    for p in traj:
-        print '\n', p
-
-    # or index directly
-    for i in range(len(traj)):
-        print '\n', traj[i]
